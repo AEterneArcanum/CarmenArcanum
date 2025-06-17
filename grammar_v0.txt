@@ -1,0 +1,40 @@
+VALUE --> STRING 
+        | NUMBER
+        | VARIABLE
+        | MATH_OP
+
+TYPE --> "𐑦𐑯𐑑𐑧𐑡𐑻"    # "integer" # allow an s character to follow for pluralism
+       | "𐑕𐑑𐑮𐑦𐑙"      # "string"
+       | "𐑚𐑵𐑤"       # "bool"
+
+MATH_OP --> ADDITION | SUBTRACTION | DIVISION | MULTIPLICATION | MODULUS
+ADDITION --> "𐑞 𐑕𐑳𐑥 𐑴𐑓" VALUE "𐑨𐑯𐑛" VALUE
+SUBTRACTION --> "𐑞 𐑛𐑦𐑓𐑮𐑧𐑯𐑕 𐑴𐑓" VALUE "𐑨𐑯𐑛" VALUE
+DIVISION --> "𐑞 𐑒𐑢𐑴𐑖𐑧𐑯𐑑 𐑴𐑓" VALUE "𐑨𐑯𐑛" VALUE
+MULTIPLICATION --> "𐑞 𐑐𐑮𐑩𐑛𐑳𐑒𐑑 𐑴𐑓" VALUE "𐑨𐑯𐑛" VALUE
+MODULUS --> "𐑞 𐑥𐑩𐑛𐑵𐑤𐑳𐑕 𐑴𐑓" VALUE "𐑨𐑯𐑛" VALUE
+
+IDENTIFIER --> "·" NAME    # Variables prefixed with interpunct (e.g., "·𐑩")
+VARIABLE --> IDENTIFIER "𐑦𐑟 𐑩" TYPE
+PUT --> "𐑐𐑳𐑑" VALUE "𐑦𐑯𐑑𐑴" VARIABLE
+
+CONDITION --> VALUE "𐑦𐑟" ("𐑯𐑪𐑑"?)   # "is" / "is not"
+            (
+              "𐑰𐑒𐑢𐑩𐑤 𐑑𐑴" VALUE    # "equal to"
+              | "𐑤𐑧𐑕 𐑞𐑩𐑯" VALUE    # "less than"
+              | "𐑜𐑮𐑱𐑑𐑻 𐑞𐑩𐑯" VALUE # "greater than"
+              | "𐑩" TYPE
+            ) ((", 𐑨𐑯𐑛" | ", 𐑹") CONDITION)? # and / or ors are split first then ands
+
+IF --> "𐑦𐑓" CONDITION "𐑞𐑯" STATEMENT 
+
+DISPLAY   --> "𐑛𐑦𐑕𐑐𐑤𐑲" VALUE  # Output
+
+STATEMENTS --> (STATEMENT ".")+
+STATEMENT  --> VARIABLE | IF | GOTO | COMMENT | PUT 
+              | DISPLAY | LABEL
+
+LABEL     --> "𐑝𐑻𐑕" IDENTIFIER
+GOTO      --> "𐑕𐑦𐑙" IDENTIFIER
+
+COMMENT    --> "‹" CONTENT "›"
