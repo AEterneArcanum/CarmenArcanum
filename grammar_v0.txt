@@ -29,10 +29,11 @@ CONDITION --> VALUE "𐑦𐑟" ("𐑯𐑪𐑑"?)   # "is" / "is not"
 IF --> "𐑦𐑓" CONDITION "𐑞𐑯" STATEMENT 
 
 DISPLAY   --> "𐑛𐑦𐑕𐑐𐑤𐑲" VALUE  # Output
+RECEIVE   --> "𐑞 𐑮𐑩𐑕𐑰𐑝𐑛" # Input
 
 STATEMENTS --> (STATEMENT ".")+
 STATEMENT  --> VARIABLE | IF | GOTO | COMMENT | PUT 
-              | DISPLAY | LABEL
+              | DISPLAY | LABEL | RECEIVE
 
 LABEL     --> "𐑝𐑻𐑕" IDENTIFIER
 GOTO      --> "𐑕𐑦𐑙" IDENTIFIER
