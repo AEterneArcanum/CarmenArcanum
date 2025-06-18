@@ -1,5 +1,4 @@
-using System.ComponentModel.Design.Serialization;
-using System.Security;
+namespace Arcane.Script.Carmen;
 
 public static class Parser
 {
@@ -80,7 +79,7 @@ public static class Parser
         }
         // Display statement
         if (tokens.Length >= 3 // Minimum 3 symbols in display statement.
-            && tokens[0].Type == TokenType.DISPLAY_STRING
+            && tokens[0].Type == TokenType.DISPLAY
             && tokens[^1].Type == TokenType.EOL)
         {
             Expression val = _getParsedExpression(tokens[1..^1]);
@@ -129,6 +128,14 @@ public static class Parser
             if (tokens[0].Type == TokenType.FALSE)
                 return new BooleanLiteral(false);
         }
+        if (tokens.Length == 2)
+        {
+            if (tokens[0].Type == TokenType.THE
+                && tokens[1].Type == TokenType.RECEIVED)
+            {
+                return new ReceiveInputExpression();
+            }
+        }
         if (tokens.Length >= 4) // x, (and|or) y
         {
             // Find each instance of [, and] [, or]
@@ -149,7 +156,7 @@ public static class Parser
                         // recurse first Or Statement
                         var parta = _getParsedExpression(tokens[..commaIndex]);
                         var partb = _getParsedExpression(tokens[(commaIndex + 2)..]);
-                        return new BinaryExpression(BinaryOperation.OR, parta, partb);
+                        return new BinaryExpression(BinaryOperationType.OR, parta, partb);
                     }
                 }
                 // No More Or Statements look for and statements
@@ -160,7 +167,7 @@ public static class Parser
                     {
                         var parta = _getParsedExpression(tokens[..commaIndex]);
                         var partb = _getParsedExpression(tokens[(commaIndex + 2)..]);
-                        return new BinaryExpression(BinaryOperation.AND, parta, partb);
+                        return new BinaryExpression(BinaryOperationType.AND, parta, partb);
                     }
                 }
                 // No And Or Or but comma exists ?? was the comma necessary -- Malformed expression
@@ -176,7 +183,7 @@ public static class Parser
                     {
                         var parta = _getParsedExpression(tokens[..indexOfIs]);
                         var partb = _getParsedExpression(tokens[(indexOfIs + 2)..]);
-                        return new BinaryExpression(BinaryOperation.ISTYPE, parta, partb);
+                        return new BinaryExpression(BinaryOperationType.ISTYPE, parta, partb);
                     }
                 }
 
@@ -203,21 +210,21 @@ public static class Parser
                     {
                         var pa = _getParsedExpression(tokens[..indexOfIs]);
                         var pb = _getParsedExpression(tokens[(indexOfMode + 2)..]);
-                        return new BinaryExpression((not) ? BinaryOperation.NOTEQUALTO : BinaryOperation.EQUALTO, pa, pb);
+                        return new BinaryExpression((not) ? BinaryOperationType.NOTEQUALTO : BinaryOperationType.EQUALTO, pa, pb);
                     }
                     if (tokens[indexOfMode].Type == TokenType.LESS
                         && tokens[indexOfMode + 1].Type == TokenType.THAN)
                     {
                         var pa = _getParsedExpression(tokens[..indexOfIs]);
                         var pb = _getParsedExpression(tokens[(indexOfMode + 2)..]);
-                        return new BinaryExpression((not) ? BinaryOperation.NOTLESSTHAN : BinaryOperation.LESSTHAN, pa, pb);
+                        return new BinaryExpression((not) ? BinaryOperationType.NOTLESSTHAN : BinaryOperationType.LESSTHAN, pa, pb);
                     }
                     if (tokens[indexOfMode].Type == TokenType.GREATER
                         && tokens[indexOfMode + 1].Type == TokenType.THAN)
                     {
                         var pa = _getParsedExpression(tokens[..indexOfIs]);
                         var pb = _getParsedExpression(tokens[(indexOfMode + 2)..]);
-                        return new BinaryExpression((not) ? BinaryOperation.NOTGREATERTHAN : BinaryOperation.GREATERTHAN, pa, pb);
+                        return new BinaryExpression((not) ? BinaryOperationType.NOTGREATERTHAN : BinaryOperationType.GREATERTHAN, pa, pb);
                     }
                     // Is Exists but malformed
                     throw new InvalidProgramException("Malformed Is Expressions");
@@ -238,11 +245,11 @@ public static class Parser
                     var partb = _getParsedExpression(tokens[(indexOfAnd + 1)..]);
                     return tokens[1].Type switch
                     {
-                        TokenType.SUM => new BinaryExpression(BinaryOperation.ADDITION, parta, partb),
-                        TokenType.DIFFERENCE => new BinaryExpression(BinaryOperation.SUBTRACTION, parta, partb),
-                        TokenType.PRODUCT => new BinaryExpression(BinaryOperation.MULTIPLICATION, parta, partb),
-                        TokenType.QUOTIENT => new BinaryExpression(BinaryOperation.DIVISION, parta, partb),
-                        TokenType.MODULUS => new BinaryExpression(BinaryOperation.MODULUS, parta, partb),
+                        TokenType.SUM => new BinaryExpression(BinaryOperationType.ADDITION, parta, partb),
+                        TokenType.DIFFERENCE => new BinaryExpression(BinaryOperationType.SUBTRACTION, parta, partb),
+                        TokenType.PRODUCT => new BinaryExpression(BinaryOperationType.MULTIPLICATION, parta, partb),
+                        TokenType.QUOTIENT => new BinaryExpression(BinaryOperationType.DIVISION, parta, partb),
+                        TokenType.MODULUS => new BinaryExpression(BinaryOperationType.MODULUS, parta, partb),
                         _ => throw new InvalidProgramException("Unrecognized operation expression.")
                     };
                 }
