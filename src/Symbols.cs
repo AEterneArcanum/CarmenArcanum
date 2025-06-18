@@ -7,6 +7,15 @@ namespace Arcane.Script.Carmen;
 /// </summary>
 public static class Symbols
 {
+    public const string COMMA = ",";
+    public const string COMMENT_END = "›";
+    public const string COMMENT_START = "‹";
+    public const string EOL = ".";
+    public const string IDENTIFIER = "·"; // NAMER from shavian keyboard.
+    public const string LITERAL_STRING_END = "\"";
+    public const string LITERAL_STRING_START = "\"";
+    public const string NEGATIVE_SIGN = "-";
+
     public const string BOOL = "𐑚𐑵𐑤";
     public const string NOT = "𐑯𐑪𐑑";
     public const string EQUAL = "𐑰𐑒𐑢𐑩𐑤";
@@ -18,16 +27,9 @@ public static class Symbols
     public const string FALSE = "𐑓𐑩𐑤𐑕";
     public const string AND = "𐑨𐑯𐑛";
     public const string OR = "𐑹";
-    public const string COMMA = ",";
     public const string LABEL = "𐑝𐑻𐑮𐑕"; //'verse'
     public const string GOTO = "𐑕𐑦𐑙"; //'sing'
-    public const string IDENTIFIER = "·"; // NAMER from shavian keyboard.
     public const string DISPLAY = "𐑛𐑦𐑕𐑐𐑤𐑲";
-    public const string LITERAL_STRING_START = "\"";
-    public const string LITERAL_STRING_END = "\"";
-    public const string EOL = ".";
-    public const string COMMENT_START = "‹";
-    public const string COMMENT_END = "›";
     public const string IS = "𐑦𐑟";
     public const string A = "𐑩";
     public const string INTEGER = "𐑦𐑯𐑑𐑧𐑡𐑻";

@@ -62,7 +62,8 @@ public static class Lexer
                     continue; // No more handling for this char
                 }
                 if (Shavian.IsPunctuation(c)
-                && c != Symbols.IDENTIFIER[0]) // remove identifier symbol because it is attached to names
+                && c != Symbols.IDENTIFIER[0]  // remove identifier symbol because it is attached to names
+                && c != Symbols.NEGATIVE_SIGN[0]) // Going to remove negative sign as it is attached to integers
                 {
                     _flushBuffer(buffer, tokens, i, column);
                     buffer.Append(c);
