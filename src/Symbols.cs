@@ -20,7 +20,7 @@ public static class Symbols
     public const string NOT = "𐑯𐑪𐑑";
     public const string EQUAL = "𐑰𐑒𐑢𐑩𐑤";
     public const string TO = "𐑑𐑴";
-    public const string LESS = "𐑤𐑧𐑕";
+    public const string LESSER = "𐑤𐑧𐑕𐑻";
     public const string GREATER = "𐑜𐑮𐑱𐑑𐑻";
     public const string THAN = "𐑞𐑩𐑯";
     public const string TRUE = "𐑑𐑤𐑵";
@@ -47,6 +47,8 @@ public static class Symbols
     public const string IF = "𐑦𐑓";
     public const string THEN = "𐑞𐑯";
     public const string RECEIVED = "𐑮𐑩𐑕𐑰𐑝𐑛";
+    public const string EITHER = "𐑲𐑔𐑻";
+    public const string BOTH = "𐑚𐑴𐑔";
 
     public static bool MatchSymbol(string value, out TokenType token)
     {
@@ -56,7 +58,7 @@ public static class Symbols
             NOT => TokenType.NOT,
             EQUAL => TokenType.EQUAL,
             TO => TokenType.TO,
-            LESS => TokenType.LESS,
+            LESSER => TokenType.LESSER,
             THAN => TokenType.THAN,
             TRUE => TokenType.TRUE,
             FALSE => TokenType.FALSE,
@@ -84,6 +86,8 @@ public static class Symbols
             IF => TokenType.IF,
             THEN => TokenType.THEN,
             RECEIVED => TokenType.RECEIVED,
+            EITHER => TokenType.EITHER,
+            BOTH => TokenType.BOTH,
             _ => _matchComplexToken(value)
         };
         return token != TokenType.UNKNOWN;

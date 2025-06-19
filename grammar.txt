@@ -21,8 +21,8 @@ PUT --> "𐑐𐑳𐑑" VALUE "𐑦𐑯𐑑𐑴" VARIABLE
 CONDITION --> VALUE "𐑦𐑟" ("𐑯𐑪𐑑"?)   # "is" / "is not"
             (
               "𐑰𐑒𐑢𐑩𐑤 𐑑𐑴" VALUE    # "equal to"
-              | "𐑤𐑧𐑕 𐑞𐑩𐑯" VALUE    # "less than"
-              | "𐑜𐑮𐑱𐑑𐑻 𐑞𐑩𐑯" VALUE # "greater than"
+              | "𐑞 𐑤𐑧𐑕𐑻 𐑴𐑓" VALUE    # "less than"
+              | "𐑞 𐑜𐑮𐑱𐑑𐑻 𐑴𐑓" VALUE # "greater than"
               | "𐑩" TYPE
             ) ((", 𐑨𐑯𐑛" | ", 𐑹") CONDITION)? # and / or ors are split first then ands
 
