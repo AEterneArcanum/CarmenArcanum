@@ -1,6 +1,5 @@
 # CarmenArcanum
-A terrible programming language for the Shavian keyboard.
-It's so bad the only way to hardcode a negative integer is subtaction (currently).
+An interpreted language for programming using the Shavian keyboard.
 
 Supports boolean, integer, and string values; as well as named variables of the same. (No functional string processing or Arrays.)
 Supports addition, subtraction, multiplication, division, and modulus operations on integers.
