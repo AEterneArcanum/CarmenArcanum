@@ -4,6 +4,10 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarmenArcanum", "CarmenArcanum.csproj", "{A119F67D-2E04-B0A6-468B-C2A5E2192843}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Carmen", "..\Carmen\Carmen.csproj", "{EED57022-8C7A-4FEB-9FCB-F6E78E3D6582}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testing", "..\Testing\Testing.csproj", "{2E2C83A0-81AD-49A0-BC8D-222DAF168D74}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,6 +18,14 @@ Global
 		{A119F67D-2E04-B0A6-468B-C2A5E2192843}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A119F67D-2E04-B0A6-468B-C2A5E2192843}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A119F67D-2E04-B0A6-468B-C2A5E2192843}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EED57022-8C7A-4FEB-9FCB-F6E78E3D6582}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EED57022-8C7A-4FEB-9FCB-F6E78E3D6582}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EED57022-8C7A-4FEB-9FCB-F6E78E3D6582}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EED57022-8C7A-4FEB-9FCB-F6E78E3D6582}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E2C83A0-81AD-49A0-BC8D-222DAF168D74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E2C83A0-81AD-49A0-BC8D-222DAF168D74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E2C83A0-81AD-49A0-BC8D-222DAF168D74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E2C83A0-81AD-49A0-BC8D-222DAF168D74}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

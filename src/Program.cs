@@ -4,17 +4,21 @@ public static class Program
 {
     public static void Main(string[] args)
     {
-        //if (args.Length != 1)
-        //{
-        //    Console.WriteLine("Filename Required For Parsing.");
-        //    return;
-        //}
-        //if (!File.Exists(args[0]))
-        //{
-        //    Console.WriteLine($"File {args[0]} does not exist.");
-        //    return;
-        //}
-        string testScript = File.ReadAllText("Test2.scroll");//args[0]);
+        string fn = string.Empty;
+        if (args.Length == 0)
+        {
+            Console.WriteLine("No file specified. Please provide a script file to execute.");
+            return;
+        }
+        if (args.Length >= 1) { 
+            fn = args[0];
+            if (!File.Exists(fn))
+            {
+                Console.WriteLine($"File {fn} does not exist.");
+                return;
+            }
+        }
+        string testScript = File.ReadAllText(fn);
         //Console.WriteLine($"TestScript: {testScript}");
         var tokens = Lexer.Tokenize(testScript);
         // foreach (var token in tokens)

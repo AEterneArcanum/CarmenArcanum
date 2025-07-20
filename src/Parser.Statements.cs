@@ -29,7 +29,7 @@ public static partial class Parser
         throw new NotImplementedException("Statement not implemented.");
     }
 
-    private static bool _tryParseIfThen(Token[] tokens, out Statement? statement)
+    private static bool _tryParseIfThen(Token[] tokens, out IfStatement? statement)
     {
         statement = null;
         if (tokens.Length < 5
@@ -45,7 +45,7 @@ public static partial class Parser
         return true;
     }
 
-    private static bool _tryParseDisplay(Token[] tokens, out Statement? statement)
+    private static bool _tryParseDisplay(Token[] tokens, out DisplayStatement? statement)
     {
         statement = null;
         if (tokens.Length < 3
@@ -56,7 +56,7 @@ public static partial class Parser
         return true;
     }
 
-    private static bool _tryParseIncrement(Token[] tokens, out Statement? statement)
+    private static bool _tryParseIncrement(Token[] tokens, out IncrementStatement? statement)
     {
         statement = null;
         if (tokens.Length != 3
@@ -68,7 +68,7 @@ public static partial class Parser
         return true;
     }
 
-    private static bool _tryParseGoTo(Token[] tokens, out Statement? statement)
+    private static bool _tryParseGoTo(Token[] tokens, out GoToStatement? statement)
     {
         statement = null;
         if (tokens.Length != 3
@@ -80,7 +80,7 @@ public static partial class Parser
         return true;
     }
 
-    private static bool _tryParseLabel(Token[] tokens, out Statement? statement)
+    private static bool _tryParseLabel(Token[] tokens, out LabelStatement? statement)
     {
         statement = null;
         if (tokens.Length != 3
@@ -92,7 +92,7 @@ public static partial class Parser
         return true;
     }
 
-    private static bool _tryParseVarDef(Token[] tokens, out Statement? statement)
+    private static bool _tryParseVarDef(Token[] tokens, out VariableDefinitionStatement? statement)
     {
         statement = null;
         if (tokens.Length != 5
@@ -121,7 +121,7 @@ public static partial class Parser
         return true;
     }
 
-    private static bool _tryParsePutInto(Token[] tokens, out Statement? statement)
+    private static bool _tryParsePutInto(Token[] tokens, out PutIntoStatement? statement)
     {
         statement = null;
         if (tokens.Length < 5

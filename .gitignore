@@ -52,3 +52,16 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+*.vsidx
+src/.vs/CarmenArcanum/v17/DocumentLayout.backup.json
+src/.vs/CarmenArcanum/v17/DocumentLayout.json
+src/.vs/ProjectEvaluation/carmenarcanum.metadata.v9.bin
+src/.vs/ProjectEvaluation/carmenarcanum.projects.v9.bin
+src/.vs/ProjectEvaluation/carmenarcanum.strings.v9.bin
+src/.vs/CarmenArcanum/CopilotIndices/17.13.433.20974/CodeChunks.db
+src/.vs/CarmenArcanum/CopilotIndices/17.13.433.20974/CodeChunks.db-shm
+src/.vs/CarmenArcanum/CopilotIndices/17.13.433.20974/CodeChunks.db-wal
+src/.vs/CarmenArcanum/CopilotIndices/17.13.433.20974/SemanticSymbols.db
+src/.vs/CarmenArcanum/CopilotIndices/17.13.433.20974/SemanticSymbols.db-shm
+src/.vs/CarmenArcanum/CopilotIndices/17.13.433.20974/SemanticSymbols.db-wal
+*.v2

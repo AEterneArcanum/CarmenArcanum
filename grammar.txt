@@ -1,10 +1,11 @@
 VALUE --> STRING 
         | NUMBER
+	| BOOL
         | VARIABLE
         | MATH_OP
 
-TYPE --> "𐑦𐑯𐑑𐑧𐑡𐑻"    # "integer" # allow an s character to follow for pluralism
-       | "𐑕𐑑𐑮𐑦𐑙"      # "string"
+TYPE --> "𐑦𐑯𐑑𐑧𐑡𐑻" | "𐑦𐑯𐑑" # "integer" # allow an s character to follow for pluralism
+       | "𐑕𐑑𐑮𐑦𐑙" | "𐑕𐑑𐑮" # "string"
        | "𐑚𐑵𐑤"       # "bool"
 
 MATH_OP --> ADDITION | SUBTRACTION | DIVISION | MULTIPLICATION | MODULUS
@@ -18,22 +19,24 @@ IDENTIFIER --> "·" NAME    # Variables prefixed with interpunct (e.g., "·𐑩"
 VARIABLE --> IDENTIFIER "𐑦𐑟 𐑩" TYPE
 PUT --> "𐑐𐑳𐑑" VALUE "𐑦𐑯𐑑𐑴" VARIABLE
 
-CONDITION --> VALUE "𐑦𐑟" ("𐑯𐑪𐑑"?)   # "is" / "is not"
-            (
-              "𐑰𐑒𐑢𐑩𐑤 𐑑𐑴" VALUE    # "equal to"
-              | "𐑞 𐑤𐑧𐑕𐑻 𐑴𐑓" VALUE    # "less than"
-              | "𐑞 𐑜𐑮𐑱𐑑𐑻 𐑴𐑓" VALUE # "greater than"
-              | "𐑩" TYPE
-            ) ((", 𐑨𐑯𐑛" | ", 𐑹") CONDITION)? # and / or ors are split first then ands
+CONDITION --> ANDCOND | ORCOND | EQUALITYCOND | BOOL
+ANDCOND --> "𐑚𐑴𐑔" CONDITION ", 𐑨𐑯𐑛" CONDITION
+ORCOND  --> "𐑲𐑞𐑻" CONDITION ", 𐑹" CONDITION
+EQUALITYCOND --> CONDITION "𐑦𐑟" ("𐑯𐑪𐑑"?)
+  (
+      "𐑰𐑒𐑢𐑩𐑤 𐑑𐑴" CONDITION
+    | "𐑞 𐑤𐑧𐑕𐑻 𐑴𐑓" CONDITION
+    | "𐑞 𐑜𐑮𐑱𐑑𐑻 𐑴𐑓" CONDITION
+  )
 
-IF --> "𐑦𐑓" CONDITION "𐑞𐑯" STATEMENT 
+IF --> "𐑦𐑓" CONDITION "𐑞𐑧𐑯" STATEMENT 
 
 DISPLAY   --> "𐑛𐑦𐑕𐑐𐑤𐑲" VALUE  # Output
 RECEIVE   --> "𐑞 𐑮𐑩𐑕𐑰𐑝𐑛" # Input
 
 STATEMENTS --> (STATEMENT ".")+
-STATEMENT  --> VARIABLE | IF | GOTO | COMMENT | PUT 
-              | DISPLAY | LABEL | RECEIVE
+STATEMENT  --> VARIABLE | IF | COMMENT | PUT | GOTO
+              | DISPLAY | RECEIVE | LABEL
 
 LABEL     --> "𐑝𐑻𐑕" IDENTIFIER
 GOTO      --> "𐑕𐑦𐑙" IDENTIFIER

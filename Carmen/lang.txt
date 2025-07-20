@@ -1,0 +1,194 @@
+﻿# Whitespace is required by parser.
+# Parsed tokens will be combined into single tokens for AST parsing.
+
+# Math Precedence Table
+# 1. PARENTHESES
+# 2. INCREMENT/DECREMENT
+# 3. POWER
+# 4. MULTIPLICATION/DIVISION/MODULUS
+# 5. ADDITION/SUBTRACTION
+# 6. COMPARISON
+# 7. LOGICAL (NOT -> AND -> OR/XOR)
+
+VARIABLE_TYPES --> 'bool'('s')? | 'integer'('s')? | 'single'('s')? | 'double'('s')? | 'char'('s')? | 'decimal'('s')?
+				| 'string'('s')? | 'short'('s')? | 'long'('s')? | 'void'('s')? 
+				| STRUCTURE_ID | ARRAY_TYPE
+ARRAY_TYPE --> 'array' ('of size' EXPRESSION)? 'of' VARIABLE_TYPES
+			 #| 'array of' #COUNT EXPRESSION# VARIABLE_TYPES
+             #| EXPRESSION VARIABLE_TYPES
+			 # ^^ Can't use this to parse complexity of multidimensional arrays/type collision
+
+EXPRESSION --> IDENTIFIER | STRINGLITERAL | NUMBERLITERAL | BOOLEANLITERAL | NULLLITERAL | ARRAYLITERAL | CHARLITERAL
+			| MATH_OPERATION | LOGICAL_OPERATION | COMPARISON_OPERATION | ARRAY_ACCESS
+			| BIT_SHIFT_OPERATION | BITWISE_OPERATION | NUL_COALESCE_OPERATION | FUNCTION_CALL | CONCAT_OPERATION | TERNARY_OPERATION
+			| PARENTHISED_EXPRESSION | BIT_ROTATION_OPERATION | ARRAY_SLICE | ARRAY_STRIDE | NULL_CHECK | TYPE_CAST | ADDRESS_OF
+			| TYPE_CHECK
+
+ADDRESS_OF --> 'the address of' EXPRESSION # Returns the address of the expression, which can be used for pointer operations.
+
+PARENTHISED_EXPRESSION --> '(' EXPRESSION ')'
+
+IDENTIFIER --> VARIABLE_IDENTIFIER | FUNCTION_ID | STRUCTURE_ID | LABEL_ID | ALIAS_ID # Added alias as a valid identifier / containing the identifier.
+VARIABLE_IDENTIFIER --> VARIABLE_ID | ARRAY_ACCESS | MEMBER_ACCESS # Added array access as a valid identifier / containing the identifier.
+VARIABLE_ID --> "$"[a-zA-Z_]*        #[a-zA-Z0-9_]* <-- current parser will not allow for digits
+FUNCTION_ID --> "@"[a-zA-Z_]*        #[a-zA-Z0-9_]*
+STRUCTURE_ID --> "#"[a-zA-Z_]*       #[a-zA-Z0-9_]*
+LABEL_ID --> ":"[a-zA-Z_]*           #[a-zA-Z0-9_]*
+ALIAS_ID --> "_"[a-zA-Z_]*           #[a-zA-Z0-9_]*
+
+# Support escape sequences '\' in string and char literals
+STRINGLITERAL --> '"' [^"]* '"'
+NUMBERLITERAL --> [0-9]+ ('.' [0-9]+)? | 0x[0-9a-fA-F]+ | 0b[01]+ | 0o[0-7]+ # TODO: Implement extended number formats
+BOOLEANLITERAL --> 'true' | 'false'
+NULLLITERAL --> 'null'
+CHARLITERAL --> "'" ( [^'\\] | '\\' [nrt'"\\] ) "'"
+ARRAYLITERAL --> ';' (EXPRESSION (',' EXPRESSION)*)? (', and ' EXPRESSION)?  # List terminated by logic EOS, parenthesized, to level keyword parse
+ARRAY_ACCESS --> 'the' INDEX_EXPRESSION 'of' EXPRESSION
+INDEX_EXPRESSION --> EXPRESSION 'index' ('from last')? | 'index' EXPRESSION ('from last')? | 'initial index' | 'final index'
+
+# Operations listed in precedence.
+MATH_OPERATION --> INCREMENT | DECREMENT | MODULUS | POWER | MULTIPLICATION | DIVISION | ADDITION | SUBTRACTION
+
+ADDITION --> 'the sum of' EXPRESSION 'and' EXPRESSION
+SUBTRACTION --> 'the difference of' EXPRESSION 'and' EXPRESSION
+MULTIPLICATION --> 'the product of' EXPRESSION 'and' EXPRESSION
+DIVISION --> 'the quotient of' EXPRESSION 'and' EXPRESSION
+MODULUS --> 'the modulo of' EXPRESSION 'and' EXPRESSION
+POWER --> EXPRESSION 'raised to the power of' EXPRESSION
+INCREMENT --> INCREMENT_PRE | INCREMENT_POST
+INCREMENT_PRE --> 'increment' EXPRESSION
+INCREMENT_POST --> EXPRESSION 'increment'					
+DECREMENT --> DECREMENT_PRE | DECREMENT_POST
+DECREMENT_PRE --> 'decrement' EXPRESSION
+DECREMENT_POST --> EXPRESSION 'decrement'					
+
+LOGICAL_OPERATION --> AND | OR | NOT | XOR
+
+AND --> EXPRESSION 'and' EXPRESSION
+OR --> EXPRESSION 'or' EXPRESSION
+NOT --> 'not' EXPRESSION														# Process not after other logical operations to prevent collisions
+XOR --> EXPRESSION 'xor' EXPRESSION | EXPRESSION 'exclusive or' EXPRESSION
+
+COMPARISON_OPERATION --> EQUALS | NOT_EQUALS | GREATER_THAN | LESS_THAN | GREATER_THAN_OR_EQUAL_TO | LESS_THAN_OR_EQUAL_TO
+
+EQUALS --> EXPRESSION 'equal to' EXPRESSION
+NOT_EQUALS --> EXPRESSION 'not equal to' EXPRESSION
+GREATER_THAN --> EXPRESSION 'greater than' EXPRESSION	| EXPRESSION 'not less than or equal to' EXPRESSION		# this one is a cool byproduct of the parser
+LESS_THAN --> EXPRESSION 'less than' EXPRESSION			| EXPRESSION 'not greater than or equal to' EXPRESSION	# as is this one
+GREATER_THAN_OR_EQUAL_TO --> EXPRESSION 'not less than' EXPRESSION | EXPRESSION 'greater than or equal to' EXPRESSION
+LESS_THAN_OR_EQUAL_TO --> EXPRESSION 'not greater than' EXPRESSION | EXPRESSION 'less than or equal to' EXPRESSION
+
+BIT_SHIFT_OPERATION --> LEFT_SHIFT | RIGHT_SHIFT
+LEFT_SHIFT --> EXPRESSION 'shifted left by' EXPRESSION
+RIGHT_SHIFT --> EXPRESSION 'shifted right by' EXPRESSION
+
+BIT_ROTATION_OPERATION --> LEFT_ROTATE | RIGHT_ROTATE
+LEFT_ROTATE --> EXPRESSION 'rotated left by' EXPRESSION
+RIGHT_ROTATE --> EXPRESSION 'rotated right by' EXPRESSION
+
+BITWISE_OPERATION --> BITWISE_AND | BITWISE_OR | BITWISE_XOR | BITWISE_NOT
+BITWISE_AND --> EXPRESSION 'bitwise and' EXPRESSION
+BITWISE_OR --> EXPRESSION 'bitwise or' EXPRESSION
+BITWISE_XOR --> EXPRESSION 'bitwise xor' EXPRESSION
+BITWISE_NOT --> 'bitwise not' EXPRESSION
+
+NUL_COALESCE_OPERATION --> EXPRESSION ', if null then' EXPRESSION
+
+FUNCTION_CALL --> 'call' FUNCTION_ID ('with' (EXPRESSION | ARRAYLITERAL))?
+
+CONCAT_OPERATION --> EXPRESSION 'concatenated with' EXPRESSION
+
+TERNARY_OPERATION --> 'if' EXPRESSION 'then' EXPRESSION 'otherwise' EXPRESSION
+
+NULL_CHECK --> EXPRESSION 'is null' | EXPRESSION 'is not null'
+
+# safe cast will return nullable
+TYPE_CAST --> ('safe' | 'unsafe')? 'cast' EXPRESSION 'as a' EXPRESSION	# first expression resolves to data point, second expression resolves to type
+TYPE_CHECK --> EXPRESSION 'is of type' EXPRESSION						# first expression resolves to data point, second expression resolves to type
+
+MEMBER_ACCESS -->  EXPRESSION ''s' EXPRESSION # person''s' name
+
+ARRAY_SLICE --> 'elements' EXPRESSION 'through' EXPRESSION 'of' EXPRESSION # [1..2]
+              | 'elements beginning from' EXPRESSION 'of' EXPRESSION  # [1..]
+			  | 'elements ending at' EXPRESSION 'of' EXPRESSION      # [..1]
+
+FUNCTION_PARAMETER -->
+    'define' VARIABLE_ID 'as' 
+    ('out' | 'in')? # read write 'ref' unnecesary due to pointer use
+    ('restrict')? # promise
+    (
+        ('nullable')? VARIABLE_TYPES ('equal to' EXPRESSION)?
+        | ('restrict')? 'pointer to' VARIABLE_TYPES ('equal to' EXPRESSION)? 
+    )
+
+
+# ARRAY_STRIDE --> 'every' EXPRESSION 'element of' EXPRESSION # ----------------------------------------------------------------------- I DONT FEEL THIS ONE
+
+
+PROGRAM --> (STATEMENT '.')*
+
+STATEMENT --> STATEMENT_BLOCK | ASSIGNMENT | VARIABLE_DEFINITION | CONDITIONAL_STATEMENT | FUNCTION_CALL_STMT | LABEL_STATEMENT | GOTO_STATEMENT | WHILE_LOOP
+			| DO_WHILE_LOOP | FOR_LOOP | FOREACH_LOOP | BREAK_STATEMENT | CONTINUE_STATEMENT | ITERATOR_LOOP | ASSERTION_STATEMENT | STRUCTURE_DEFINITION | FUNCTION_DEFINITION
+			| RETURN_STATEMENT | USING_STATEMENT | IMPORT_STATEMENT
+# Statements are separated by a period, but the last statement does not require a period.	
+
+RETURN_STATEMENT --> 'return' EXPRESSION?
+
+LABEL_STATEMENT --> 'label' LABEL_ID
+GOTO_STATEMENT --> 'goto' LABEL_ID
+
+ASSERTION_STATEMENT --> 'assert' CONDITION (',' STRINGLITERAL)?
+
+BREAK_STATEMENT --> 'break'
+CONTINUE_STATEMENT --> 'continue'
+
+STATEMENT_BLOCK --> 'execute the following;' (STATEMENT)* 'fin'
+
+#parser will simply check if the entire statement validates as a function call
+EXPRESSION_STMT --> FUNCTION_CALL | INCREMENT_STMT | DECREMENT_STMT
+FUNCTION_CALL_STMT --> FUNCTION_CALL # function call as a statement for when no return or throwaway is expected.
+INCREMENT_STMT --> INCREMENT_PRE | INCREMENT_POST
+DECREMENT_STMT --> DECREMENT_PRE | DECREMENT_POST
+
+ASSIGNMENT --> 'set' VARIABLE_IDENTIFIER 'equal to' EXPRESSION
+USING_STATEMENT --> 'using' VARIABLE_ID 'as' EXPRESSION
+IMPORT_STATEMENT --> 'import' STRINGLITERAL ('as' IDENTIFIER)? # 
+ALIAS_STATEMENT --> 'alias' ALIAS_ID 'as' EXPRESSION # alias is a reference to an existing accessable variable, not a copy. It can be used to create a new name for an existing variable.
+
+ITERATOR_LOOP --> 'iterate over' EXPRESSION
+				('with index as' VARIABLE_ID)? 
+                ('with value as' VARIABLE_ID)? 
+				 'do' STATEMENT # while in this loop provide 'index' and 'item' as keyword values. // compiler can ignore unused values in future.
+FOREACH_LOOP --> 'for each' VARIABLE_ID 'in' EXPRESSION 'do' STATEMENT
+FOR_LOOP --> 'for' VARIABLE_ID 'from' EXPRESSION 'to' EXPRESSION ('step' EXPRESSION)? 'do' STATEMENT
+
+WHILE_LOOP --> 'while' EXPRESSION 'do' STATEMENT
+DO_WHILE_LOOP --> 'do' STATEMENT 'while' EXPRESSION
+
+CONDITIONAL_STATEMENT --> 'if' EXPRESSION 'then' STATEMENT ('otherwise if' EXPRESSION 'then' STATEMENT)?+ ('otherwise' STATEMENT)?
+
+STRUCTURE_DEFINITION --> 'define structure' STRUCTURE_ID 'with' ARRAYLITERAL # <-- Of VARIABLE_DEFINITION # '; VARIABLE_DEFINITION, VARIABLE_DEFINITION, VARIABLE_DEFINITION, and VARIABLE_DEFINITION.'
+                        # Ended with EOS
+
+FUNCTION_DEFINITION --> 
+    'define function' FUNCTION_ID 
+    ('for' STRUCTURE_ID)? 
+    ('returning' VARIABLE_TYPES)?
+    ('with' FUNCTION_PARAMETERS)? # possible no parameters
+    ':' STATEMENT # either single statement or a block statement
+FUNCTION_PARAMETERS --> ARRAYLITERAL << Of FUNCTION_PARAMETER
+                      | FUNCTION_PARAMETER
+
+# define name as number of type equal to value // array of // empty array
+# Variable cannot be const and nullable it does not make sense. Constant definition must set a value.
+# nullable types contain a default value of null, which is not the same as a constant.
+# Numeric literals will default to integer or double (without flags), char literals to char, string literals to string, and boolean literals to bool.
+# define has preferred use outside of stucture and function definitions
+VARIABLE_DEFINITION --> 
+    'define' (
+        'constant' VARIABLE_ID 'as' VARIABLE_TYPES 'equal to' EXPRESSION  # Required value
+        | ('static')? VARIABLE_ID 'as' (
+            ('nullable')? VARIABLE_TYPES ('equal to' EXPRESSION)?
+            | 'pointer to' VARIABLE_TYPES ('equal to' EXPRESSION)?
+          )
+    )

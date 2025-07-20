@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text;
 
 namespace Arcane.Script.Carmen;
@@ -12,12 +11,10 @@ public static class Lexer
 
     public static List<Token> Tokenize(string[] lines)
     {
-        Debug.WriteLine("Initializing Tokenizer...");
         List<Token> tokens = [];
         StringBuilder buffer = new();
         bool inComment = false;
         bool inString = false;
-        Debug.WriteLine("Interating through all chars...");
         int i = 0; int column = 0;
         for (; i < lines.Length; i++) // Iterate through lines
         {
