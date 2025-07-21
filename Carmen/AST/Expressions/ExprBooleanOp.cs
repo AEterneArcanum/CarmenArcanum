@@ -14,6 +14,7 @@ namespace Arcane.Carmen.AST.Expressions
         Xor,    // Logical XOR (^)
         //Not     // Logical NOT (!) Unary shall handle separately
     }
+
     public static class BooleanOperatorEx
     {
         public static string ToString(this BooleanOperator op)
@@ -30,10 +31,8 @@ namespace Arcane.Carmen.AST.Expressions
     /// <summary>
     /// Represent boolean operations in the AST.
     /// </summary>
-    public record ExprBooleanOp(BooleanOperator Operator, Expression Left, Expression Right) : Expression
-    {
-        public override string ToString() => $"{Left} {Operator.ToString()} {Right}";
-    }
+    public record ExprBooleanOp(BooleanOperator Operator, Expression Left, Expression Right) : Expression;
+
     public class ExprBooleanOpParser : ExpressionParser
     {
         public ExprBooleanOpParser(int priority = ExpressionPriorities.BooleanOperation) : base(priority) { }

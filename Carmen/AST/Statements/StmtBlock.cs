@@ -7,9 +7,7 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtBlock(Statement[] Statements) : Statement
-    {
-    }
+    public record StmtBlock(Statement[] Statements) : Statement;
 
     public class StmtBlockParser : StatementParser
     {
@@ -112,7 +110,7 @@ namespace Arcane.Carmen.AST.Statements
                                 }
 
                                 // Chained conditionals
-                                if (next is TokenType.KeywordOtherwiseIf or TokenType.KeywordOtherwise)
+                                if (next is TokenType.KeywordOtherwiseIf or TokenType.KeywordOtherwise or TokenType.KeywordCase)
                                     continue;
                             }
                             return i; // Final token of tokens.

@@ -37,10 +37,7 @@ namespace Arcane.Carmen.AST.Expressions
     /// <summary>
     /// Contain addition multiplication, division, subtraction, power, and modulus
     /// </summary>
-    public record ExprMathOp(ExprMathOpType Type, Expression Left, Expression Right) : Expression
-    {
-        public override string ToString() => $"{Left} {Type.ToString()} {Right}";
-    }
+    public record ExprMathOp(ExprMathOpType Type, Expression Left, Expression Right) : Expression;
 
     public class ExprMathOpParser : ExpressionParser
     {

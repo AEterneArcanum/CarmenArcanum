@@ -7,13 +7,8 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprAddressOf(Expression Expression) : Expression
-    {
-        public override string ToString()
-        {
-            return $"&{Expression}";
-        }
-    }
+    public record ExprAddressOf(Expression Expression) : Expression;
+
     public class ExprAddressOfParser : ExpressionParser
     {
         public ExprAddressOfParser(int priority = ExpressionPriorities.AddressOf) : base(priority)

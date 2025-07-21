@@ -2,10 +2,7 @@
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprCharLiteral(string Value) : Expression
-    {
-        public override string ToString() => $"'{Value}'";
-    }
+    public record ExprCharLiteral(string Value) : Expression;
 
     public class ExprCharLiteralParser : ExpressionParser
     {

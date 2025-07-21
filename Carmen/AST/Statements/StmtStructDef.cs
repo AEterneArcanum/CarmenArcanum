@@ -1,15 +1,16 @@
-﻿using Arcane.Carmen.Lexer.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Arcane.Carmen.AST.Expressions;
+using Arcane.Carmen.Lexer.Tokens;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtStructDef(Expression Id, Expression Definition) : Statement
-    {
-    }
+    /// <summary>
+    /// STRUCTURE_DEFINITION --> 'define structure' STRUCTURE_ID 'with' ARRAYLITERAL # <-- Of VARIABLE_DEFINITION 
+    /// # '; VARIABLE_DEFINITION, VARIABLE_DEFINITION, VARIABLE_DEFINITION, and VARIABLE_DEFINITION.'
+    /// # Ended with EOS
+    /// </summary>
+    /// <param name="Id"></param>
+    /// <param name="Definition"></param>
+    public record StmtStructDef(ExprIdentifier Id, ExprStructParameters Definition) : Statement;
 
     public class StmtStructDefParser : StatementParser
     {
@@ -26,12 +27,15 @@ namespace Arcane.Carmen.AST.Statements
             if (!tokens.TryGetFirstTopLayerIndexOf(TokenType.KeywordWith, out var idxWith))
                 return false;
             // Parse id
-            if (!Expression.TryParse(tokens[1..idxWith], out var idExpression))
+            if (!Expression.TryParse(tokens[1..idxWith], out var idExpression) ||
+                idExpression is not ExprIdentifier || ((ExprIdentifier)idExpression).Type != IdentifierType.Structure)
                 return false;
             // Parse definition
-            if (!Expression.TryParse(tokens[(idxWith + 1)..], out var defExpression))
+            if (!Expression.TryParse(tokens[(idxWith + 1)..], out var defExpression) ||
+                defExpression is not ExprStructParameters)
                 return false;
-            result = new StmtStructDef(idExpression!, defExpression!);
+
+            result = new StmtStructDef((ExprIdentifier)idExpression!, (ExprStructParameters)defExpression!);
             return true;
         }
     }

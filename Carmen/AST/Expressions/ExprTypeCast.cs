@@ -7,10 +7,8 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprTypeCast(Expression Expression, Expression Type, bool Safe) : Expression
-    {
-        public override string ToString() => $"{Expression} as a {Type}";
-    }
+    public record ExprTypeCast(Expression Expression, ExprIdentifier Type, bool Safe) : Expression;
+
     public class ExprTypeCastParser : ExpressionParser 
     {
         public ExprTypeCastParser(int priority = ExpressionPriorities.TypeCast) : base(priority) { }
@@ -33,8 +31,10 @@ namespace Arcane.Carmen.AST.Expressions
             // Parse object expression
             if (!Expression.TryParse(tokens[(safeExplicit? 2 : 1) .. idxAsA], out var objExpression)) return false;
             // Parse type expression
-            if (!Expression.TryParse(tokens[(idxAsA + 1)..], out var typeExpression)) return false;
-            expression = new ExprTypeCast(objExpression!, typeExpression!, safe);
+            if (!Expression.TryParse(tokens[(idxAsA + 1)..], out var typeExpression) ||
+                typeExpression is not ExprIdentifier || !((ExprIdentifier)typeExpression).IsType()) 
+                return false;
+            expression = new ExprTypeCast(objExpression!, (ExprIdentifier)typeExpression!, safe);
             return true;
         }
     }

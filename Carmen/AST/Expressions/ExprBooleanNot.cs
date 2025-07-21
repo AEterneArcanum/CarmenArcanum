@@ -2,13 +2,7 @@
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprBooleanNot(Expression Expression) : Expression
-    {
-        public override string ToString()
-        {
-            return $"!({Expression})";
-        }
-    }
+    public record ExprBooleanNot(Expression Expression) : Expression;
 
     public class ExprBooleanNotParser : ExpressionParser
     {

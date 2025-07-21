@@ -5,9 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Arcane.Carmen.Lexer
+namespace Arcane.Carmen.Lexer.Tokens.Matchers
 {
-    public static class Symbols
+    public class EnglishTokenMatcher
+        : ITokenMatcher
     {
         // String representations of numbers
         #region DIGITS
@@ -104,7 +105,7 @@ namespace Arcane.Carmen.Lexer
         public const string Point = "point"; // Decimal point in numbers
         public const string Negative = "negative"; // Negative sign for numbers
         #endregion
-
+        #region KEYWORDS
         public const string VariableIdentifier = "$"; // Used for variables, e.g., "$myVariable"
         public const string FunctionIdentifier = "@"; // Used for functions, e.g., "@myFunction"
         public const string StructurIdentifier = "#"; // Used for structures, e.g., "#MyStruct"
@@ -119,13 +120,13 @@ namespace Arcane.Carmen.Lexer
         public const string TypeBoolean = "boolean";
         public const string TypeByte = "byte";
         public const string TypeChar = "char";
-        public const string TypeShort = "short"; 
-        public const string TypeInt = "integer"; 
-        public const string TypeLong = "long"; 
-        public const string TypeFloat = "single"; 
-        public const string TypeDouble = "double"; 
-        public const string TypeDecimal = "decimal"; 
-        public const string TypeObject = "object"; 
+        public const string TypeShort = "short";
+        public const string TypeInt = "integer";
+        public const string TypeLong = "long";
+        public const string TypeFloat = "single";
+        public const string TypeDouble = "double";
+        public const string TypeDecimal = "decimal";
+        public const string TypeObject = "object";
 
         public const string TypeStructure = "structure";
 
@@ -165,6 +166,7 @@ namespace Arcane.Carmen.Lexer
         public const string Ending = "ending";
         public const string Value = "value";
         public const string Each = "each"; // Used for iterators, e.g., "each item in the array" or "each element in the list"
+        public const string Case = "case";
 
         public const string Step = "step"; // Used for iterators, e.g., "step by index" or "step by value"
         public const string Sum = "sum"; // Used for math "the sum of n and m"
@@ -194,7 +196,7 @@ namespace Arcane.Carmen.Lexer
         public const string Cast = "cast";
         public const string Break = "break"; // Used for breaking out of loops or switch statements
         public const string Continue = "continue"; // Used for skipping to the next iteration of loops
-        
+
         public const string Pointer = "pointer"; // Used for pointer types, e.g., "int* myPointer" or "string* myStringPointer"
         public const string Constant = "constant";
         public const string Static = "static";
@@ -202,6 +204,8 @@ namespace Arcane.Carmen.Lexer
         public const string Returning = "returning";
         public const string Out = "out";
         public const string Restrict = "restrict";
+        public const string Switch = "switch";
+        public const string Match = "match";
 
 
         public const string Increment = "increment";
@@ -224,10 +228,12 @@ namespace Arcane.Carmen.Lexer
         public const string CloseParenthesis = ")";
         public const string Apostrophe = "'";
         public const string S = "s";
+        public const string Wildcard = "_";
+        #endregion
 
-        public static bool TryMatch(string raw, out TokenType tokenType)
+        public bool TryMatchKeyword(string raw, out TokenType type)
         {
-            tokenType = raw.Trim().ToLowerInvariant() switch
+            type = raw.Trim().ToLowerInvariant() switch
             {
                 True => TokenType.LiteralTrue,
                 False => TokenType.LiteralFalse,
@@ -326,11 +332,15 @@ namespace Arcane.Carmen.Lexer
                 Negative => TokenType.LiteralNumber,
                 #endregion
 
-                Pointer => TokenType. KeywordPointer, // Used for pointer types, e.g., "int* myPointer" or "string* myStringPointer"
+
+                Pointer => TokenType.KeywordPointer, // Used for pointer types, e.g., "int* myPointer" or "string* myStringPointer"
                 Constant => TokenType.KeywordConstant, // Used for constant values, e.g., "constant myConstant = 42"
-                Static => TokenType.  KeywordStatic, // Used for static variables or methods, e.g., "static int myStaticVariable" or "static void MyStaticMethod()"
+                Static => TokenType.KeywordStatic, // Used for static variables or methods, e.g., "static int myStaticVariable" or "static void MyStaticMethod()"
                 Nullable => TokenType.KeywordNullable, // Used for nullable types, e.g., "int? myVariable" or "string? myString"
 
+                Switch => TokenType.KeywordSwitch,
+                Match => TokenType.KeywordMatch,
+                Case => TokenType.KeywordCase,
                 Define => TokenType.KeywordDefine,
                 Is => TokenType.KeywordIs,
                 Index => TokenType.KeywordIndex, // Used for array access and is value keyword in Carmen iterators
@@ -460,26 +470,170 @@ namespace Arcane.Carmen.Lexer
                 LabelIdentifier => TokenType.LabelIdentifier,
                 AliasIdentifier => TokenType.AliasIdentifier,
 
-                _ => _matchComplex(raw)
+                _ => TokenType.Unknown // Not A Keyword
+            };
+            return type != TokenType.Unknown;
+        }
+
+        public bool TryMatchComplex(string raw, out TokenType type)
+        {
+            if (raw.StartsWith('"') && raw.EndsWith("\"")) 
+            {
+                type = TokenType.LiteralString;
+                return true;
+            }
+            else if (raw.StartsWith('\'') && raw.EndsWith('\''))
+            {
+                type = TokenType.LiteralCharacter;
+                return true;
+            }
+            else if (decimal.TryParse(raw, out _))
+            {
+                type = TokenType.LiteralNumber;
+                return true;
+            }
+            type = TokenType.Unknown;
+            return false;
+        }
+
+        public bool TryConvertToDecimal(Token token, out decimal value) 
+        {
+            value = 0;
+            if (decimal.TryParse(token.Raw, out value))
+                return true;
+            if (!token.IsNumeric())
+                return false;
+            value = token.Raw switch
+            {
+                Zero => 0,
+                One => 1,
+                Two => 2,
+                Three => 3,
+                Four => 4,
+                Five => 5,
+                Six => 6,
+                Seven => 7,
+                Eight => 8,
+                Nine => 9,
+                Ten => 10,
+                Eleven => 11,
+                Twelve => 12,
+                Thirteen => 13,
+                Fourteen => 14,
+                Fifteen => 15,
+                Sixteen => 16,
+                Seventeen => 17,
+                Eighteen => 18,
+                Nineteen => 19,
+                Twenty => 20,
+                Thirty => 30,
+                Forty => 40,
+                Fifty => 50,
+                Sixty => 60,
+                Seventy => 70,
+                Eighty => 80,
+                Ninety => 90,
+                Hundred => 100,
+                Thousand => 1000,
+                Million => 1000000,
+                Billion => 1000000000,
+                Trillion => 1000000000000,
+                Quadrillion => 1000000000000000,
+                Quintillion => 1000000000000000000,
+
+                First => 1,
+                Second => 2,
+                Third => 3,
+                Fourth => 4,
+                Fifth => 5,
+                Sixth => 6,
+                Seventh => 7,
+                Eighth => 8,
+                Ninth => 9,
+                Tenth => 10,
+                Eleventh => 11,
+                Twelfth => 12,
+                Thirteenth => 13,
+                Fourteenth => 14,
+                Fifteenth => 15,
+                Sixteenth => 16,
+                Seventeenth => 17,
+                Eighteenth => 18,
+                Nineteenth => 19,
+                Twentieth => 20,
+                Thirtieth => 30,
+                Fortieth => 40,
+                Fiftieth => 50,
+                Sixtieth => 60,
+                Seventieth => 70,
+                Eightieth => 80,
+                Ninetieth => 90,
+                Hundredth => 100,
+                Thousandth => 1000,
+                Millionth => 1000000,
+                Billionth => 1000000000,
+                Trillionth => 1000000000000,
+                Quadrillionth => 1000000000000000,
+                Quintillionth => 1000000000000000000,
+                Point => 0.0m, // Decimal point as a fraction.
+                _ => throw new NotImplementedException($"Unknown numeric token: {token.Raw} at line {token.Line}, column {token.Column}.")
             };
             return true;
         }
 
-        private static TokenType _matchComplex(string raw)
+        public bool TryConvertToDecimal(Token[] tokens, out decimal value)
         {
-            if (raw.StartsWith('"') && raw.EndsWith('"'))
+            value = default;
+            if (!tokens.IsNumeric()) return false;
+            if (tokens.Length == 1) return TryConvertToDecimal(tokens[0], out value);
+            
+            bool inDecimal = false;
+            decimal multiplier = 1;
+
+            for (var i = 0l ; i < tokens.Length; i++)
             {
-                return TokenType.LiteralString;
+                var token = tokens[i];
+                if (!TryConvertToDecimal(token, out var digit)) return false;
+                if (token.Raw == Point) // String form decimal point
+                {
+                    if (inDecimal)
+                    {
+                        value = 0;
+                        return false;
+                    }
+                    inDecimal = true;
+                    multiplier = 1;
+                    continue;
+                }
+                if (inDecimal) 
+                {
+                    multiplier *= 0.1m;
+                }
+                switch (token.Raw)
+                {
+                    case Hundred:
+                    case Hundredth:
+                    case Thousand:
+                    case Thousandth:
+                    case Million:
+                    case Millionth:
+                    case Billion:
+                    case Billionth:
+                    case Trillion:
+                    case Trillionth:
+                    case Quadrillion:
+                    case Quadrillionth:
+                    case Quintillion:
+                    case Quintillionth:
+                        if (value == 0) value = 1;
+                        value *= digit;
+                        break;
+                    default:
+                        value += digit * multiplier;
+                        break;
+                }
             }
-            if (raw.StartsWith('\'') && raw.EndsWith('\''))
-            {
-                return TokenType.LiteralCharacter;
-            }
-            if (decimal.TryParse(raw, out _))
-            {
-                return TokenType.LiteralNumber;
-            }
-            return TokenType.Unknown;
+            return true;
         }
     }
 }

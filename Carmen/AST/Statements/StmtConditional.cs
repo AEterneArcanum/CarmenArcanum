@@ -9,9 +9,7 @@ namespace Arcane.Carmen.AST.Statements
         Statement Execution, 
         ElseCondition[] Elifs, 
         Statement? Else)
-        : Statement
-    {
-    }
+        : Statement;
 
     public class StmtConditionalParser : StatementParser
     {

@@ -171,6 +171,8 @@
         KeywordSwitch,
         KeywordCase,
         KeywordDefault,
+        KeywordMatch,
+        KeywordWildcard,
 
         KeywordFunction,
         KeywordStructure,

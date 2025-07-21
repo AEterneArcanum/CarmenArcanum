@@ -1,15 +1,13 @@
-﻿using Arcane.Carmen.Lexer.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Arcane.Carmen.AST.Expressions;
+using Arcane.Carmen.Lexer.Tokens;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtLabel(Expressions.ExprIdentifier Identifier) : Statement
-    {
-    }
+    /// <summary>
+    /// 'label' LABEL_ID
+    /// </summary>
+    /// <param name="Identifier"></param>
+    public record StmtLabel(ExprIdentifier Identifier) : Statement;
 
     public class StmtLabelParser : StatementParser
     {
@@ -21,7 +19,7 @@ namespace Arcane.Carmen.AST.Statements
             statement = null;
             if (tokens.Length < 2 || tokens[0].Type != TokenType.LabelIdentifier)
                 return false;
-            var identifier = new Expressions.ExprIdentifier(tokens[0].Raw, Expressions.IdentifierType.Label);
+            var identifier = new ExprIdentifier(tokens[0].Raw, IdentifierType.Label);
             statement = new StmtLabel(identifier);
             return true;
         }

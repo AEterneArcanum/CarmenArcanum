@@ -21,13 +21,9 @@ namespace Arcane.Carmen.AST.Expressions
         //Not             // ! (Logical NOT) // Only single operand, not a binary operator
     }
 
-    public record ExprComparisonOp(ComparisonOperator Operator, Expression Left, Expression Right) : Expression
+    public static class ComparisonOperatorEx
     {
-        public override string ToString()
-        {
-            return $"{Left} {OperatorToString(Operator)} {Right}";
-        }
-        private static string OperatorToString(ComparisonOperator op)
+        public static string OperatorToString(this ComparisonOperator op)
         {
             return op switch
             {
@@ -41,6 +37,8 @@ namespace Arcane.Carmen.AST.Expressions
             };
         }
     }
+
+    public record ExprComparisonOp(ComparisonOperator Operator, Expression Left, Expression Right) : Expression;
 
     public class ExprComparisonOpParser : ExpressionParser
     {

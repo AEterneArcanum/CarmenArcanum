@@ -151,7 +151,7 @@ INCREMENT_STMT --> INCREMENT_PRE | INCREMENT_POST
 DECREMENT_STMT --> DECREMENT_PRE | DECREMENT_POST
 
 ASSIGNMENT --> 'set' VARIABLE_IDENTIFIER 'equal to' EXPRESSION
-USING_STATEMENT --> 'using' VARIABLE_ID 'as' EXPRESSION
+USING_STATEMENT --> 'using' VARIABLE_ID 'as' EXPRESSION # cleanup when done
 IMPORT_STATEMENT --> 'import' STRINGLITERAL ('as' IDENTIFIER)? # 
 ALIAS_STATEMENT --> 'alias' ALIAS_ID 'as' EXPRESSION # alias is a reference to an existing accessable variable, not a copy. It can be used to create a new name for an existing variable.
 
@@ -192,3 +192,28 @@ VARIABLE_DEFINITION -->
             | 'pointer to' VARIABLE_TYPES ('equal to' EXPRESSION)?
           )
     )
+
+# NOT YET PARSED BELOW -----------------------------------------------------------------------------------------------------------------
+
+ENUM_DEFINITION --> 'define enum' STRUCT_ID 'with' NONKEYWORDSYMBOL, ... # values compared against keywords and literals during parse
+
+SWITCH_STATEMENT -->
+    'switch' EXPRESSION (CASE_CLAUSE)+ 'otherwise' ':' STATEMENT # Block mandatory?
+CASE_CLAUSE --> 'case' PATTERN ('when' EXPRESSION)? ':' STATEMENT # Block mandatory?
+
+PATTERN --> LITERAL_PATERN
+            | ENUM_PATTERN
+            | TYPE_PATTERN
+            | WILDCARD_PATTERN
+
+LITERAL_PATTERN --> NUMBERLITERAL | STRINGLITERAL | BOOLEANLITERAL      # existing literals
+ENUM_PATTERN --> ENUM_ID ''s' ENUM_VALUE                                # ExprMemberAccess IDENTIFIER '.' IDENTIFIER
+TYPE_PATTERN --> VARIABLE_TYPES VARIABLE_ID?                            # <-- Type check && cast
+WILDCARD_PATTERN --> '_'                                                # <-- Wildcard Keyword
+
+MATCH_EXPRESSION -->
+    'match' EXPRESSION 'with ;'
+    (PATTERN 'to' EXPRESSION ',')* # <-- because 'match pattern to expression.'
+    ('otherwise' EXPRESSION)?
+
+

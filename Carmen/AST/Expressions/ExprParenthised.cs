@@ -8,10 +8,7 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprParenthised(Expression InternalExpression) : Expression
-    {
-        public override string ToString() => $"({InternalExpression})"; // String representation of the parenthesized expression
-    }
+    public record ExprParenthised(Expression InternalExpression) : Expression;
 
     public class ExprParenthisedParser : ExpressionParser
     {

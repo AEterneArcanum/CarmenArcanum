@@ -1,11 +1,21 @@
-﻿using Arcane.Carmen.Lexer.Tokens;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace Arcane.Carmen.Lexer
+namespace Arcane.Carmen.Lexer.Tokens
 {
-    public class Tokenizer
+    public class Tokenizer : ITokenizer
     {
-        public static List<Token> Tokenize(string content)
+        public ITokenMatcher Matcher { get; init; }
+
+        public Tokenizer(ITokenMatcher matcher)
+        {
+            Matcher = matcher;
+        }
+
+        public List<Token> Tokenize(string content)
         {
             var tokens = new List<Token>();
             var buffer = new StringBuilder();
@@ -59,7 +69,7 @@ namespace Arcane.Carmen.Lexer
                     }
                     if (c == '"')
                     {
-                        _flushBuffer(buffer, tokens, line, column);
+                        FlushBuffer(buffer, tokens, line, column);
                         inString = false;
                     }
                     continue;
@@ -80,7 +90,7 @@ namespace Arcane.Carmen.Lexer
                     }
                     if (c == '\'')
                     {
-                        _flushBuffer(buffer, tokens, line, column);
+                        FlushBuffer(buffer, tokens, line, column);
                         inCharacter = false;
                     }
                     continue;
@@ -88,7 +98,7 @@ namespace Arcane.Carmen.Lexer
                 // Enter a comment.
                 if (c == '/' && i + 1 < content.Length && content[i + 1] == '/')
                 {
-                    _flushBuffer(buffer, tokens, line, column);
+                    FlushBuffer(buffer, tokens, line, column);
                     inComment = true;
                     i++; // Skip the next character as well.
                     continue;
@@ -96,7 +106,7 @@ namespace Arcane.Carmen.Lexer
                 // Enter a multiline comment.
                 if (c == '/' && i + 1 < content.Length && content[i + 1] == '*')
                 {
-                    _flushBuffer(buffer, tokens, line, column);
+                    FlushBuffer(buffer, tokens, line, column);
                     inMultilineComment = true;
                     i++; // Skip the next character as well.
                     continue;
@@ -104,7 +114,7 @@ namespace Arcane.Carmen.Lexer
                 // Handle character literals.
                 if (c == '\'')
                 {
-                    _flushBuffer(buffer, tokens, line, column);
+                    FlushBuffer(buffer, tokens, line, column);
                     inCharacter = true;
                     buffer.Append(c);
                     continue;
@@ -112,7 +122,7 @@ namespace Arcane.Carmen.Lexer
                 // Enter a string.
                 if (c == '"')
                 {
-                    _flushBuffer(buffer, tokens, line, column);
+                    FlushBuffer(buffer, tokens, line, column);
                     inString = true;
                     buffer.Append(c);
                     continue;
@@ -120,13 +130,13 @@ namespace Arcane.Carmen.Lexer
                 // Space between tokens.
                 if (char.IsWhiteSpace(c))
                 {
-                    _flushBuffer(buffer, tokens, line, column);
+                    FlushBuffer(buffer, tokens, line, column);
                     continue;
                 }
                 // Raw Number handling.
-                if (char.IsDigit(c) || c == '-') 
+                if (char.IsDigit(c) || c == '-')
                 {
-                    _flushBuffer(buffer, tokens, line, column);
+                    FlushBuffer(buffer, tokens, line, column);
                     buffer.Append(c);
                     // Check if the next character is also a digit or a dot for floating point numbers.
 
@@ -134,11 +144,12 @@ namespace Arcane.Carmen.Lexer
                     {
                         i++;
                         buffer.Append('x'); // Hexadecimal prefix.
-                        while (i + 1 < content.Length && char.IsAsciiHexDigit(content[i + 1])) {
+                        while (i + 1 < content.Length && char.IsAsciiHexDigit(content[i + 1]))
+                        {
                             i++;
                             buffer.Append(c);
                         }
-                        _flushBuffer(buffer, tokens, line, column);
+                        FlushBuffer(buffer, tokens, line, column);
                         continue; // Continue to the next character.
                     }
 
@@ -149,48 +160,43 @@ namespace Arcane.Carmen.Lexer
                         i++;
                         buffer.Append(content[i]);
                     }
-                    _flushBuffer(buffer, tokens, line, column);
+                    FlushBuffer(buffer, tokens, line, column);
                     continue;
                 }
                 // Punctuation handling.
                 if (char.IsPunctuation(c) || Shavian.IsPunctuation(c))
                 {
-                    _flushBuffer(buffer, tokens, line, column);
+                    FlushBuffer(buffer, tokens, line, column);
                     buffer.Append(c);
-                    _flushBuffer(buffer, tokens, line, column);
+                    FlushBuffer(buffer, tokens, line, column);
                     continue;
                 }
 
                 buffer.Append(c);
             }
-            _flushBuffer(buffer, tokens, line, column);
-            tokens = _condenseIdentifiers(tokens);
-            tokens = _condenseNumbers(tokens);
-            tokens = _condenseKeywords(tokens);
+            FlushBuffer(buffer, tokens, line, column);
+            tokens = CondenseIdentifiers(tokens);
+            tokens = CondenseNumbers(tokens);
+            tokens = CondenseKeywords(tokens);
             return tokens;
         }
 
-        private static void _flushBuffer(StringBuilder buffer, List<Token> tokens, int line, int column)
+        private void FlushBuffer(StringBuilder buffer, List<Token> tokens, int line, int column)
         {
             if (buffer.Length > 0)
             {
                 string raw = buffer.ToString();
                 buffer.Clear();
 
-                if (!Symbols.TryMatch(raw, out TokenType tokenType))
-                {
-                    throw new Exception($"Unknown token: {raw} at line {line}, column {column}");
-                }
+                if (Matcher.TryMatchKeyword(raw, out var type) ||
+                    Matcher.TryMatchComplex(raw, out type))
+                { }
 
-                tokens.Add(new Token(tokenType, raw, line, column - raw.Length));
+                tokens.Add(new(type, raw, line, column));
             }
         }
-        /// <summary>
-        /// Rejoin identifier symbols "@#$" to the identifier body [should be an unknown token]
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        private static List<Token> _condenseIdentifiers(List<Token> tokens)
+
+        private List<Token> CondenseIdentifiers(List<Token> tokens)
         {
             var condensed = new List<Token>();
 
@@ -206,6 +212,9 @@ namespace Arcane.Carmen.Lexer
                         i++; // Skip the next token as it has been combined.
                         continue; // Continue to the next token without adding the current one.
                     }
+                    // solo alias symbol replace with wildcard token
+                    condensed.Add(new(TokenType.KeywordWildcard, "_", token.Line, token.Column));
+                    continue;
                 }
 
                 if (token.Type == TokenType.FuncIdentifier && i + 1 < tokens.Count)
@@ -228,7 +237,7 @@ namespace Arcane.Carmen.Lexer
                     }
                     else
                     {
-                        condensed.Add(new(TokenType.PunctuationColon, token.Raw,  token.Line, token.Column));
+                        condensed.Add(new(TokenType.PunctuationColon, token.Raw, token.Line, token.Column));
                         // replace only the bad id with colon punctuation
                         continue;
                     }
@@ -246,9 +255,9 @@ namespace Arcane.Carmen.Lexer
 
                 if (token.Type == TokenType.VariableIdentifier && i + 1 < tokens.Count)
                 {
-                    if (tokens[i+1].Type == TokenType.Unknown)
+                    if (tokens[i + 1].Type == TokenType.Unknown)
                     {
-                        condensed.Add(new(TokenType.VariableIdentifier, token.Raw + tokens[i+1].Raw, token.Line, token.Column));
+                        condensed.Add(new(TokenType.VariableIdentifier, token.Raw + tokens[i + 1].Raw, token.Line, token.Column));
                         i++; // Skip the next token as it has been combined.
                         continue; // Continue to the next token without adding the current one.
                     }
@@ -260,7 +269,7 @@ namespace Arcane.Carmen.Lexer
             return condensed;
         }
 
-        private static List<Token> _condenseKeywords(List<Token> tokens)
+        private List<Token> CondenseKeywords(List<Token> tokens)
         {
             var condensed = new List<Token>();
             for (int i = 0; i < tokens.Count; i++)
@@ -414,14 +423,15 @@ namespace Arcane.Carmen.Lexer
                 }
                 else if (token.Type == TokenType.KeywordIs && i + 1 < tokens.Count)
                 {
-                    if (i + 2 < tokens.Count) {
+                    if (i + 2 < tokens.Count)
+                    {
                         if (tokens[i + 1].Type == TokenType.KeywordNot && tokens[i + 2].Type == TokenType.LiteralNull)
                         {
                             condensed.Add(new Token(TokenType.KeywordIsNotNull, "is not null", token.Line, token.Column));
                             i += 2; // Skip the next two tokens as they have been combined.
                             continue;
                         }
-                        else if (tokens[i +1].Type == TokenType.KeywordOf && tokens[i + 2].Type == TokenType.KeywordType)
+                        else if (tokens[i + 1].Type == TokenType.KeywordOf && tokens[i + 2].Type == TokenType.KeywordType)
                         {
                             condensed.Add(new Token(TokenType.KeywordIsOfType, "is of type", token.Line, token.Column));
                             i += 2; // Skip the next two tokens as they have been combined.
@@ -621,7 +631,7 @@ namespace Arcane.Carmen.Lexer
                         i++;
                         continue;
                     }
-                    else if (tokens[i+ 1].Type == TokenType.KeywordStructure)
+                    else if (tokens[i + 1].Type == TokenType.KeywordStructure)
                     {
                         condensed.Add(new(TokenType.KeywordDefineStructure, token.Raw + " " + tokens[i + 1].Raw, token.Line, token.Column));
                         i++;
@@ -633,7 +643,7 @@ namespace Arcane.Carmen.Lexer
             return condensed;
         }
 
-        private static List<Token> _condenseNumbers(List<Token> tokens) 
+        private List<Token> CondenseNumbers(List<Token> tokens)
         {
             var condensed = new List<Token>();
             for (int i = 0; i < tokens.Count; i++)
@@ -650,7 +660,7 @@ namespace Arcane.Carmen.Lexer
                     }
                     // Combine all number tokens into one.
                     var numberTokens = tokens[i..(endOfNumber + 1)];
-                    if (numberTokens.ToArray().TryConvertToDecimal(out var decimalValue))
+                    if (Matcher.TryConvertToDecimal(numberTokens.ToArray(), out var decimalValue))
                         condensed.Add(new Token(TokenType.LiteralNumber, decimalValue.ToString(), token.Line, token.Column));
                     else
                         // If conversion fails, keep the original tokens.

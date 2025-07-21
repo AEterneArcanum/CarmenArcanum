@@ -7,13 +7,7 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprBitwiseNot(Expression InternalExpression) : Expression
-    {
-        public override string ToString()
-        {
-            return $"~({InternalExpression})";
-        }
-    }
+    public record ExprBitwiseNot(Expression InternalExpression) : Expression;
 
     public class ExprBitwiseNotParser : ExpressionParser
     {

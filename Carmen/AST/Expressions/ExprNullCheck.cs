@@ -7,10 +7,8 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprNullCheck(Expression Expression, bool Not) : Expression
-    {
-        public override string ToString() => $"{Expression} is{(Not?" not":"")} null";
-    }
+    public record ExprNullCheck(Expression Expression, bool Not) : Expression;
+
     public class ExprNullCheckParser : ExpressionParser
     {
         public ExprNullCheckParser(int priority = ExpressionPriorities.NullCheck) : base(priority) { }

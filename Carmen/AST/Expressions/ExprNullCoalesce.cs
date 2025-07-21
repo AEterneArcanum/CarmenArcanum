@@ -7,10 +7,8 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprNullCoalesce(Expression Left, Expression Right) : Expression
-    {
-        public override string ToString() => $"{Left} ?? {Right}"; // Using ?? as the null coalesce operator
-    }
+    public record ExprNullCoalesce(Expression Left, Expression Right) : Expression;
+
     public class ExprNullCoalesceParser : ExpressionParser
     {
         public ExprNullCoalesceParser(int priority = ExpressionPriorities.NullCoalescing) : base(priority) // Assuming lowest priority for null coalesce expressions

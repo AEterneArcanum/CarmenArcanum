@@ -12,13 +12,8 @@ namespace Arcane.Carmen.AST.Expressions
     /// </summary>
     /// <param name="Owner">Owning object</param>
     /// <param name="Member">Accessed member</param>
-    public record ExprMemberAccess(Expression Owner, Expression Member) : Expression
-    {
-        public override string ToString()
-        {
-            return $"{Owner} 's {Member}";
-        }
-    }
+    public record ExprMemberAccess(Expression Owner, Expression Member) : Expression;
+
     public class ExprMemberAccessParser : ExpressionParser
     {
         public ExprMemberAccessParser(int priority = ExpressionPriorities.MemberAccess) : base(priority) { }

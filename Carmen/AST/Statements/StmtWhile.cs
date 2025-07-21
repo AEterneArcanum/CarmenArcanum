@@ -1,16 +1,13 @@
 ﻿using Arcane.Carmen.Lexer.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtWhile(Expression Expression, Statement Body)
-        : Statement
-    {
-    }
+    /// <summary>
+    /// 'while' EXPRESSION 'do' STATEMENT
+    /// </summary>
+    /// <param name="Expression">Conditional expression.</param>
+    /// <param name="Body">Statement body.</param>
+    public record StmtWhile(Expression Expression, Statement Body) : Statement;
 
     public class StmtWhileParser : StatementParser
     {

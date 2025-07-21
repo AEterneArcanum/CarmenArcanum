@@ -1,9 +1,4 @@
 ﻿using Arcane.Carmen.Lexer.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
@@ -14,17 +9,25 @@ namespace Arcane.Carmen.AST.Expressions
         WriteOnly,
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="Id"></param>
+    /// <param name="Type"></param>
+    /// <param name="Default"></param>
+    /// <param name="Nullable"></param>
+    /// <param name="Pointer"></param>
+    /// <param name="Restricted"></param>
+    /// <param name="RWPermission"></param>
     public record ExprFunctionParameter(
-        Expression Id,
-        Expression Type,
+        ExprIdentifier Id,
+        ExprIdentifier Type,
         Expression? Default,
         bool Nullable,
         bool Pointer,
         bool Restricted,
         RWPermission RWPermission) 
-        : Expression
-    {
-    }
+        : Expression;
 
     public class ExprFunctionParameterParser : ExpressionParser
     {
@@ -50,7 +53,8 @@ namespace Arcane.Carmen.AST.Expressions
             else if (isIn)
                 rwPermit = RWPermission.ReadOnly;
 
-            if (!Expression.TryParse(tokens[1..idxAs], out var idExpr))
+            if (!Expression.TryParse(tokens[1..idxAs], out var idExpr) ||
+                idExpr is not ExprIdentifier || ((ExprIdentifier)idExpr).Type == IdentifierType.Function)
                 return false;
             if (isNullable) idxAs++;
             if (isPointer) idxAs++;
@@ -59,18 +63,20 @@ namespace Arcane.Carmen.AST.Expressions
             if (isIn) idxAs++;
             if (setsDefault) 
             {
-                if (!Expression.TryParse(tokens[(idxAs + 1)..idxSet], out var typeExpr))
+                if (!Expression.TryParse(tokens[(idxAs + 1)..idxSet], out var typeExpr) ||
+                    typeExpr is not ExprIdentifier || !((ExprIdentifier)typeExpr).Type.IsValueType())
                     return false;
                 if (!Expression.TryParse(tokens[(idxSet + 1)..], out var setExpr))
                     return false;
-                result = new ExprFunctionParameter(idExpr!, typeExpr!, setExpr, isNullable, isPointer, isRestrict, rwPermit);
+                result = new ExprFunctionParameter((ExprIdentifier)idExpr!, (ExprIdentifier)typeExpr!, setExpr, isNullable, isPointer, isRestrict, rwPermit);
                 return true;
             }
             else
             {
-                if (!Expression.TryParse(tokens[(idxAs + 1)..], out var typeExpr))
+                if (!Expression.TryParse(tokens[(idxAs + 1)..], out var typeExpr) ||
+                    typeExpr is not ExprIdentifier || !((ExprIdentifier)typeExpr).Type.IsValueType())
                     return false;
-                result = new ExprFunctionParameter(idExpr!, typeExpr!, null, isNullable, isPointer, isRestrict, rwPermit);
+                result = new ExprFunctionParameter((ExprIdentifier)idExpr!, (ExprIdentifier)typeExpr!, null, isNullable, isPointer, isRestrict, rwPermit);
                 return true;
             }
         }

@@ -2,13 +2,7 @@
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprArrayAccess(Expression Accessed, Expression Index) : Expression
-    {
-        public override string ToString()
-        {
-            return $"{Accessed}[{Index}]";
-        }
-    }
+    public record ExprArrayAccess(Expression Accessed, Expression Index) : Expression;
 
     public class ExprArrayAccessParser : ExpressionParser
     {

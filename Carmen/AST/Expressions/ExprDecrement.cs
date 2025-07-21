@@ -7,13 +7,7 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprDecrement(Expression Identifier, bool IsPrefix) : Expression
-    {
-        public override string ToString()
-        {
-            return IsPrefix ? $"--({Identifier})" : $"({Identifier})--";
-        }
-    }
+    public record ExprDecrement(Expression Identifier, bool IsPrefix) : Expression;
 
     public class ExprDecrementParser : ExpressionParser
     {

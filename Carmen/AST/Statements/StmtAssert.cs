@@ -7,13 +7,7 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtAssert(Expression Condition, Expression? Message) : Statement
-    {
-        public override string ToString()
-        {
-            return $"assert {Condition} : {Message}";
-        }
-    }
+    public record StmtAssert(Expression Condition, Expressions.ExprStringLiteral? Message) : Statement;
 
     public class StmtAssertParser : StatementParser
     {
@@ -36,9 +30,10 @@ namespace Arcane.Carmen.AST.Statements
             {
                 // has message
                 if (!Expression.TryParse(tokens[1..commaIndex], out var condition) ||
-                    !Expression.TryParse(tokens[(commaIndex + 1)..], out var message))
+                    !Expression.TryParse(tokens[(commaIndex + 1)..], out var message) ||
+                    message is not Expressions.ExprStringLiteral)
                     return false;
-                statement = new StmtAssert(condition!, message!);
+                statement = new StmtAssert(condition!, (Expressions.ExprStringLiteral)message!);
             }
             return true;
         }

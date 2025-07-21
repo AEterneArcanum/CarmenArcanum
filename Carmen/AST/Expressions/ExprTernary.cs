@@ -7,13 +7,7 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprTernary(Expression Condition, Expression TrueExpression, Expression FalseExpression) : Expression
-    {
-        public override string ToString()
-        {
-            return $"{Condition} ? {TrueExpression} : {FalseExpression}";
-        }
-    }
+    public record ExprTernary(Expression Condition, Expression TrueExpression, Expression FalseExpression) : Expression;
 
     public class ExprTernaryParser : ExpressionParser
     {

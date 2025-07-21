@@ -8,11 +8,7 @@ namespace Arcane.Carmen.AST.Expressions
         Right,
     }
 
-    public record ExprBitShift(BitDirection Direction, Expression Left, Expression Right) : Expression
-    {
-        public override string ToString() =>
-            $"{Left} {((Direction == BitDirection.Right)? " >> " : " << ")} {Right}";
-    }
+    public record ExprBitShift(BitDirection Direction, Expression Left, Expression Right) : Expression;
 
     public class ExprBitShiftParser : ExpressionParser
     {

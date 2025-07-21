@@ -7,10 +7,8 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprArrayDefinition(Expression Type, Expression? Size) : Expression
-    {
-        public override string ToString() => $"Array of size {Size} of {Type}";
-    }
+    public record ExprArrayDefinition(ExprIdentifier Type, Expression? Size) : Expression;
+
     public class ExprArrayDefinitionParser : ExpressionParser
     {
         public ExprArrayDefinitionParser(int priority) : base(priority)
@@ -36,12 +34,14 @@ namespace Arcane.Carmen.AST.Expressions
             {
                 if (idxOf < 1 || idxOf >= tokens.Length - 1) return false; // 'of' must be followed by a type
             }
-            if (!Expression.TryParse(tokens[(idxOf + 1)..], out Expression? type))
+
+            if (!Expression.TryParse(tokens[(idxOf + 1)..], out Expression? type) ||
+                type is not ExprIdentifier || !((ExprIdentifier)type).IsType())
             {
                 return false; // Failed to parse the type expression
             }
             // Create the array definition expression
-            result = new ExprArrayDefinition(type!, size);
+            result = new ExprArrayDefinition((ExprIdentifier)type!, size);
             return true; // Successfully parsed the array definition expression
         }
     }

@@ -7,9 +7,7 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtContinue : Statement
-    {
-    }
+    public record StmtContinue : Statement;
 
     public class StmtContinueParser : StatementParser
     {

@@ -6,13 +6,7 @@ namespace Arcane.Carmen.AST.Expressions
     /// Represents a list in code "; value, value, value, and value".
     /// This code will not support lists within lists.
     /// </summary>
-    public record ExprList(Expression[] Expressions) : Expression
-    {
-        public override string ToString()
-        {
-            return $"{string.Join(", ", Expressions.Select(e => e.ToString()))}";
-        }
-    }
+    public record ExprList(Expression[] Expressions) : Expression;
 
     public class ExprListParser : ExpressionParser
     {

@@ -2,10 +2,7 @@
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprBooleanLiteral(bool Value) : Expression
-    {
-        public override string ToString() => Value ? "true" : "false";
-    };
+    public record ExprBooleanLiteral(bool Value) : Expression;
 
     public class ExprBooleanLiteralParser : ExpressionParser
     {

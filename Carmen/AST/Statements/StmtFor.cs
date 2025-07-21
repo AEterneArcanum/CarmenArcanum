@@ -1,4 +1,5 @@
-﻿using Arcane.Carmen.Lexer.Tokens;
+﻿using Arcane.Carmen.AST.Expressions;
+using Arcane.Carmen.Lexer.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,10 +8,20 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtFor(Expression Id, Expression From, Expression To,
-        Expression? Step, Statement Body) : Statement
-    {
-    }
+    /// <summary>
+    /// 'for' VARIABLE_ID 'from' EXPRESSION 'to' EXPRESSION ('step' EXPRESSION)? 'do' STATEMENT
+    /// </summary>
+    /// <param name="Id"></param>
+    /// <param name="From"></param>
+    /// <param name="To"></param>
+    /// <param name="Step"></param>
+    /// <param name="Body"></param>
+    public record StmtFor(
+        ExprIdentifier Id, 
+        Expression From, 
+        Expression To,
+        Expression? Step, 
+        Statement Body) : Statement;
 
     public class StmtForParser : StatementParser
     {
@@ -33,7 +44,9 @@ namespace Arcane.Carmen.AST.Statements
             bool hasStep = tokens.TryGetFirstTopLayerIndexOf(TokenType.KeywordStep, out int idxStep);
             
             // Id between for and from
-            if (!Expression.TryParse(tokens[1..idxFrom], out var exprId))
+            if (!Expression.TryParse(tokens[1..idxFrom], out var exprId) || 
+                exprId is not ExprIdentifier || 
+                ((ExprIdentifier)exprId).Type == IdentifierType.Variable)
                 return false;
             // From between from and to
             if (!Expression.TryParse(tokens[(idxFrom + 1)..idxTo], out var exprFrom)) return false;
@@ -46,9 +59,9 @@ namespace Arcane.Carmen.AST.Statements
             if (hasStep)
             {
                 if (!Expression.TryParse(tokens[(idxStep + 1)..idxDo], out var exprStep)) return false;
-                result = new StmtFor(exprId!, exprFrom!, exprTo!, exprStep, stmtBody!);
+                result = new StmtFor((ExprIdentifier)exprId!, exprFrom!, exprTo!, exprStep, stmtBody!);
             }
-            result = new StmtFor(exprId!, exprFrom!, exprTo!, null, stmtBody!);
+            result = new StmtFor((ExprIdentifier)exprId!, exprFrom!, exprTo!, null, stmtBody!);
             return true;
         }
     }

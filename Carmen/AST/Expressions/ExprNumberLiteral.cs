@@ -7,10 +7,7 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprNumberLiteral(decimal Value) : Expression
-    {
-        public override string ToString() => Value.ToString();
-    }
+    public record ExprNumberLiteral(decimal Value) : Expression;
 
     public class ExprNumberLiteralParser : ExpressionParser
     {

@@ -1,4 +1,5 @@
-﻿using Arcane.Carmen.Lexer.Tokens;
+﻿using Arcane.Carmen.AST.Expressions;
+using Arcane.Carmen.Lexer.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,13 +8,18 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtForEach(Expression Identifier, Expression Collection, Statement Body) : Statement
-    {
-        public override string ToString()
-        {
-            return $"foreach ({Identifier} in {Collection}) {{ {Body} }}";
-        }
-    }
+    /// <summary>
+    /// 'for each' VARIABLE_ID 'in' EXPRESSION 'do' STATEMENT
+    /// </summary>
+    /// <param name="Identifier"></param>
+    /// <param name="Collection"></param>
+    /// <param name="Body"></param>
+    public record StmtForEach(
+        ExprIdentifier Identifier, 
+        Expression Collection, 
+        Statement Body) 
+        : Statement;
+
     public class StmtForEachParser : StatementParser
     {
         public StmtForEachParser(int priority = StatementPriorities.Loop) : base(priority)
@@ -34,6 +40,7 @@ namespace Arcane.Carmen.AST.Statements
                 return false;
             // Parse identifier
             if (!Expression.TryParse(tokens[1..index], out var identifier) ||
+                identifier is not ExprIdentifier || ((ExprIdentifier)identifier).Type != IdentifierType.Variable ||
                 !Expression.TryParse(tokens[(index + 1)..doIndex], out var collection) ||
                 !Statement.TryParse(tokens[(doIndex + 1)..^1], out var body))
             {

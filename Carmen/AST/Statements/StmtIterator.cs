@@ -1,16 +1,18 @@
-﻿using Arcane.Carmen.Lexer.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Arcane.Carmen.AST.Expressions;
+using Arcane.Carmen.Lexer.Tokens;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtIterator(Expression Expression, Expression? IndexId, 
-        Expression? ValueId, Statement? Body) : Statement
-    {
-    }
+    /// <summary>
+    /// 'iterate over' EXPRESSION ('with index as' VARIABLE_ID)? ('with value as' VARIABLE_ID)? 'do' STATEMENT 
+    /// # while in this loop provide 'index' and 'item' as keyword values. // compiler can ignore unused values in future.
+    /// </summary>
+    /// <param name="Expression"></param>
+    /// <param name="IndexId"></param>
+    /// <param name="ValueId"></param>
+    /// <param name="Body"></param>
+    public record StmtIterator(Expression Expression, ExprIdentifier? IndexId, 
+        ExprIdentifier? ValueId, Statement? Body) : Statement;
 
     public class StmtIteratorParser : StatementParser
     {
@@ -44,24 +46,27 @@ namespace Arcane.Carmen.AST.Statements
                 {
                     // value is between idxIndex and valIndex
                     if (!Expression.TryParse(tokens[(idxIndex + 1)..valIndex], out var valueId) ||
-                        !Expression.TryParse(tokens[(valIndex + 1)..index], out var indexId))
+                        valueId is not ExprIdentifier || ((ExprIdentifier)valueId).Type != IdentifierType.Variable ||
+                        !Expression.TryParse(tokens[(valIndex + 1)..index], out var indexId) ||
+                        indexId is not ExprIdentifier || ((ExprIdentifier)indexId).Type != IdentifierType.Variable)
                     {
                         return false;
                     }
                     // body is after the 'do' keyword
                     if (!Statement.TryParse(tokens[(index + 1)..], out var body))
                         return false;
-                    result = new StmtIterator(expression!, indexId!, valueId!, body);
+                    result = new StmtIterator(expression!, (ExprIdentifier)indexId!, (ExprIdentifier)valueId!, body);
                 }
                 // value not named
                 else
                 {
                     if (!Expression.TryParse(tokens[(idxIndex + 1)..index], out var indexId) ||
+                        indexId is not ExprIdentifier || ((ExprIdentifier)indexId).Type != IdentifierType.Variable ||
                         !Statement.TryParse(tokens[(index + 1)..], out var body))
                     {
                         return false;
                     }
-                    result = new StmtIterator(expression!, indexId!, null, body);
+                    result = new StmtIterator(expression!, (ExprIdentifier)indexId!, null, body);
                 }
             }
             else
@@ -72,11 +77,12 @@ namespace Arcane.Carmen.AST.Statements
                     // expression is between 1 and valIndex
                     if (!Expression.TryParse(tokens[1..valIndex], out var expression) ||
                         !Expression.TryParse(tokens[(valIndex + 1)..index], out var valueId) ||
+                        valueId is not ExprIdentifier || ((ExprIdentifier)valueId).Type != IdentifierType.Variable ||
                         !Statement.TryParse(tokens[(index + 1)..], out var body))
                     {
                         return false;
                     }
-                    result = new StmtIterator(expression!, null, valueId!, body);
+                    result = new StmtIterator(expression!, null, (ExprIdentifier)valueId!, body);
                 }
                 else
                 {

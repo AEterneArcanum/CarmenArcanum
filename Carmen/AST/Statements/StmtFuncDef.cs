@@ -1,4 +1,5 @@
-﻿using Arcane.Carmen.Lexer.Tokens;
+﻿using Arcane.Carmen.AST.Expressions;
+using Arcane.Carmen.Lexer.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,10 +8,24 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Statements
 {
+    /// <summary>
+    /// FUNCTION_DEFINITION -->  'define function' FUNCTION_ID
+    ///                                 ('for' STRUCTURE_ID)?
+    ///                                 ('returning' VARIABLE_TYPES)?
+    ///                                 ('with' FUNCTION_PARAMETERS)? # possible no parameters
+    ///                                 ':' STATEMENT # either single statement or a block statement
+    /// FUNCTION_PARAMETERS -->     ARRAYLITERAL << Of FUNCTION_PARAMETER
+    ///                             | FUNCTION_PARAMETER
+    /// </summary>
+    /// <param name="Id"></param>
+    /// <param name="Struct"></param>
+    /// <param name="RetType"></param>
+    /// <param name="Parameters"></param>
+    /// <param name="Body"></param>
     public record StmtFuncDef(
-        Expression Id,
-        Expression? Struct,
-        Expression? RetType,
+        ExprIdentifier Id,
+        ExprIdentifier? Struct,
+        ExprIdentifier? RetType,
         Expression? Parameters,
         Statement Body) : Statement;
 
@@ -47,7 +62,8 @@ namespace Arcane.Carmen.AST.Statements
             else if (hasParameters) endOfElement = idxWith;
 
             // Parse func id
-            if (!Expression.TryParse(tokens[staOfElement..endOfElement], out var funcId))
+            if (!Expression.TryParse(tokens[staOfElement..endOfElement], out var funcId) ||
+                funcId is not ExprIdentifier || ((ExprIdentifier)funcId).Type != IdentifierType.Function)
                 return false;
 
             Expression? structEx = null;
@@ -62,7 +78,8 @@ namespace Arcane.Carmen.AST.Statements
             // Parse struct id expression
             if (structMember)
             {
-                if (!Expression.TryParse(tokens[staOfElement..endOfElement], out structEx))
+                if (!Expression.TryParse(tokens[staOfElement..endOfElement], out structEx) ||
+                    structEx is not ExprIdentifier || ((ExprIdentifier)structEx).Type != IdentifierType.Structure)
                     return false;
             }
                 
@@ -73,7 +90,8 @@ namespace Arcane.Carmen.AST.Statements
 
             if (retDefined)
             {
-                if (!Expression.TryParse(tokens[staOfElement..endOfElement], out returnEx))
+                if (!Expression.TryParse(tokens[staOfElement..endOfElement], out returnEx) ||
+                    returnEx is not ExprIdentifier || !((ExprIdentifier)returnEx).Type.IsValueType())
                     return false;
             }
 
@@ -82,11 +100,19 @@ namespace Arcane.Carmen.AST.Statements
 
             if (hasParameters)
             {
-                if (!Expression.TryParse(tokens[staOfElement..endOfElement], out parameEx))
+                if (!Expression.TryParse(tokens[staOfElement..endOfElement], out parameEx) ||
+                    (parameEx is not ExprFunctionParameter && parameEx is not ExprList))
                     return false;
+                if (parameEx is ExprList lst)
+                {
+                    foreach (var item in lst.Expressions) 
+                    { 
+                        if (item is not ExprFunctionParameter) return false;
+                    }
+                }
             }
 
-            result = new StmtFuncDef(funcId!, structEx, returnEx, parameEx, body!);
+            result = new StmtFuncDef((ExprIdentifier)funcId!, (ExprIdentifier)structEx!, (ExprIdentifier)returnEx!, parameEx, body!);
             return true;
         }
     }

@@ -7,13 +7,8 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtAssignment(Expression Identifier, Expression Value) : Statement
-    {
-        public override string ToString()
-        {
-            return $"{Identifier} = {Value};";
-        }
-    }
+    public record StmtAssignment(Expression Identifier, Expression Value) : Statement;
+
     public class StmtAssignmentParser : StatementParser
     {
         public StmtAssignmentParser(int priority = StatementPriorities.Assignment) : base(priority)

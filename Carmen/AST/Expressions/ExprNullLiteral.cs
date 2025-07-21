@@ -2,10 +2,7 @@
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprNullLiteral : Expression
-    {
-        public override string ToString() => "null";
-    }
+    public record ExprNullLiteral : Expression;
 
     public class ExprNullLiteralParser : ExpressionParser
     {

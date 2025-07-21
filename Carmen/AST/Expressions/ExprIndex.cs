@@ -7,13 +7,7 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprIndex(Expression Index, bool FromLast, bool ZeroBased) : Expression // Rand idea how can i compile this such that a negative index become from last
-    {
-        public override string ToString()
-        {
-            return $"{(FromLast ? "^" : string.Empty)}{Index}{(ZeroBased? "" : "-1")}";
-        }
-    }
+    public record ExprIndex(Expression Index, bool FromLast, bool ZeroBased) : Expression;
 
     public class ExprIndexParser : ExpressionParser
     {

@@ -19,11 +19,7 @@ namespace Arcane.Carmen.AST.Expressions
         //RotateRight
     }
 
-    public record ExprBitwiseOp(BitwiseOperation Operation, Expression Left, Expression Right) : Expression
-    {
-        public override string ToString() =>
-            $"{Left} {Operation.ToString().ToLower()} {Right}";
-    }
+    public record ExprBitwiseOp(BitwiseOperation Operation, Expression Left, Expression Right) : Expression;
 
     public class ExprBitwiseOpParser : ExpressionParser
     {

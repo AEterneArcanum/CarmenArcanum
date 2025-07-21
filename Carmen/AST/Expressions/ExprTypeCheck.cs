@@ -1,13 +1,8 @@
 ﻿using Arcane.Carmen.Lexer.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprTypeCheck(Expression Expression, Expression Type) : Expression;
+    public record ExprTypeCheck(Expression Expression, ExprIdentifier Type) : Expression;
 
     public class ExprTypeCheckParser : ExpressionParser
     {
@@ -24,10 +19,11 @@ namespace Arcane.Carmen.AST.Expressions
             if (idxx < 1 || idxx >= tokens.Length - 1) return false;
             if (!Expression.TryParse(tokens[..idxx], out Expression? expr))
                 return false;
-            if (!Expression.TryParse(tokens[(idxx + 1)..], out Expression? type))
+            if (!Expression.TryParse(tokens[(idxx + 1)..], out Expression? type) ||
+                type is not ExprIdentifier || !((ExprIdentifier)type).IsType())
                 return false;
             if (expr == null || type == null) return false;
-            result = new ExprTypeCheck(expr, type);
+            result = new ExprTypeCheck(expr, (ExprIdentifier)type);
             return true;
         }
     }

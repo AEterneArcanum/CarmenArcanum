@@ -7,13 +7,7 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprFunctionCall(Expression Identifier, Expression? Argument) : Expression
-    {
-        public override string ToString()
-        {
-            return Argument is null ? $"{Identifier}" : $"{Identifier}({Argument})";
-        }
-    }
+    public record ExprFunctionCall(Expression Identifier, Expression? Argument) : Expression;
 
     public class ExprFunctionCallParser : ExpressionParser
     {
@@ -30,7 +24,8 @@ namespace Arcane.Carmen.AST.Expressions
             bool hasArguments = tokens.TryGetFirstTopLayerIndexOf(TokenType.KeywordWith, out int withIndex);
             if (hasArguments)
             {
-                if (!Expression.TryParse(tokens[1..withIndex], out var identifier) || (identifier is not ExprIdentifier && identifier is not ExprMemberAccess))
+                if (!Expression.TryParse(tokens[1..withIndex], out var identifier) || 
+                    (identifier is not ExprIdentifier && identifier is not ExprMemberAccess))
                 {
                     return false; // Failed to parse the identifier. Identifiers are // either a variable or a member access.
                 }
@@ -38,15 +33,27 @@ namespace Arcane.Carmen.AST.Expressions
                 {
                     return false;
                 }
+
+                if (identifier is ExprIdentifier idr)
+                {
+                    if (idr.Type != IdentifierType.Function)
+                        return false;
+                }
+
                 expression = new ExprFunctionCall(identifier!, argument);
                 return true;
             }
             else
             {
                 if (!Expression.TryParse(tokens[1..], out var identifier) || (identifier is not ExprIdentifier && identifier is not ExprMemberAccess))
-                {
                     return false;
+
+                if (identifier is ExprIdentifier idr)
+                {
+                    if (idr.Type != IdentifierType.Function)
+                        return false;
                 }
+
                 expression = new ExprFunctionCall(identifier!, null);
                 return true;
             }

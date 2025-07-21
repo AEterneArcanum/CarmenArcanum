@@ -7,13 +7,7 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprConcatenate(Expression Left, Expression Right) : Expression
-    {
-        public override string ToString()
-        {
-            return $"{Left} + {Right}";
-        }
-    }
+    public record ExprConcatenate(Expression Left, Expression Right) : Expression;
 
     public class ExprConcatenateParser : ExpressionParser
     {

@@ -1,4 +1,5 @@
-﻿using Arcane.Carmen.Lexer.Tokens;
+﻿using Arcane.Carmen.AST.Expressions;
+using Arcane.Carmen.Lexer.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,9 +8,7 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtFunctionCall(Expressions.ExprFunctionCall FunctionCall) : Statement
-    {
-    }
+    public record StmtFunctionCall(ExprFunctionCall FunctionCall) : Statement;
 
     public class StmtFunctionCallParser : StatementParser
     {
@@ -19,12 +18,12 @@ namespace Arcane.Carmen.AST.Statements
         public override bool TryParse(Token[] tokens, out Statement? result)
         {
             if (!Expression.TryParse(tokens, out var expr) 
-                || expr is not Expressions.ExprFunctionCall)
+                || expr is not ExprFunctionCall)
             {
                 result = null;
                 return false;
             }
-            result = new StmtFunctionCall((Expressions.ExprFunctionCall)expr!);
+            result = new StmtFunctionCall((ExprFunctionCall)expr!);
             return true;
         }
     }

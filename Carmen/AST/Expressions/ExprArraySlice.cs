@@ -7,13 +7,8 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Expressions
 {
-    public record ExprArraySlice(Expression Array, Expression? Start, Expression? End) : Expression
-    {
-        public override string ToString()
-        {
-            return $"{Array}[{(Start is null ? "" : Start)}..{(End is null ? "" : End)}]";
-        }
-    }
+    public record ExprArraySlice(Expression Array, Expression? Start, Expression? End) : Expression;
+
     public class ExprArraySliceParser : ExpressionParser
     {
         public ExprArraySliceParser(int priority = ExpressionPriorities.ArraySlice) : base(priority)

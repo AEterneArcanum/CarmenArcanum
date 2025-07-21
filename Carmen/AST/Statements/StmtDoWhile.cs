@@ -7,9 +7,7 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtDoWhile(Expression Expression, Statement Statement) : Statement
-    {
-    }
+    public record StmtDoWhile(Expression Expression, Statement Statement) : Statement;
 
     public class StmtDoWhileParser : StatementParser
     {

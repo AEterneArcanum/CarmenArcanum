@@ -8,11 +8,7 @@ using Arcane.Carmen.Lexer.Tokens;
 namespace Arcane.Carmen.AST.Expressions
 {
     public record ExprBitRotation(BitDirection Direction, Expression Left, Expression Right)
-        : Expression
-    {
-        public override string ToString() =>
-            $"{Left} {((Direction == BitDirection.Right) ? " ROR " : " ROL ")} {Right}";
-    }
+        : Expression;
 
     public class ExprBitRotationParser : ExpressionParser
     {

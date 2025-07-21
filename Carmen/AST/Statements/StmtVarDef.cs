@@ -1,9 +1,5 @@
 ﻿using Arcane.Carmen.Lexer.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Arcane.Carmen.AST.Expressions;
 
 namespace Arcane.Carmen.AST.Statements
 {
@@ -14,10 +10,23 @@ namespace Arcane.Carmen.AST.Statements
         Static
     }
 
+    /// <summary>
+    /// 'define' ( 'constant' VARIABLE_ID 'as' VARIABLE_TYPES 'equal to' EXPRESSION  # Required value 
+    ///          | ('static')? VARIABLE_ID 'as' (('nullable')? VARIABLE_TYPES('equal to' EXPRESSION)?
+    ///                                          | 'pointer to' VARIABLE_TYPES('equal to' EXPRESSION)?
+    ///                                         )
+    ///          )
+    /// </summary>
+    /// <param name="Id"></param>
+    /// <param name="SuperType"></param>
+    /// <param name="Type"></param>
+    /// <param name="Default"></param>
+    /// <param name="Nullable"></param>
+    /// <param name="Pointer"></param>
     public record StmtVarDef(
-        Expression Id,
+        ExprIdentifier Id,
         SuperType SuperType,
-        Expression Type,
+        ExprIdentifier Type,
         Expression? Default,
         bool Nullable,
         bool Pointer)
@@ -41,7 +50,11 @@ namespace Arcane.Carmen.AST.Statements
                 _ => SuperType.Ordinary
             };
             int idStart = (superType == SuperType.Ordinary) ? 1 : 2;
-            if (!Expression.TryParse(tokens[idStart..idxAs], out var idEx)) return false;
+
+            if (!Expression.TryParse(tokens[idStart..idxAs], out var idEx) // Id expression must validate to variable identifier.
+                || idEx is not ExprIdentifier ||
+                ((ExprIdentifier)idEx).Type != IdentifierType.Variable) return false;
+
             bool isNullable = tokens[idxAs + 1].Type == TokenType.KeywordNullable;
             bool isPointer = tokens[idxAs + 1].Type == TokenType.KeywordPointer;
             bool defInit = tokens.TryGetFirstTopLayerIndexOf(TokenType.KeywordEqualTo, out var idxEquals);
@@ -52,17 +65,21 @@ namespace Arcane.Carmen.AST.Statements
                     return false;
             }
             Expression? type;
-            if (defInit) 
+            if (defInit) // type must validate to a valid type or struct identifier
             { 
                 // form as to equals
-                if (!Expression.TryParse(tokens[(idxAs + 1)..idxEquals], out type)) return false;
+                if (!Expression.TryParse(tokens[(idxAs + 1)..idxEquals], out type) ||
+                    type is not ExprIdentifier || 
+                    !((ExprIdentifier)type).Type.IsValueType()) return false;
             } 
             else 
             {
                 // from as to end
-                if (!Expression.TryParse(tokens[(idxAs + 1)..], out type)) return false;
+                if (!Expression.TryParse(tokens[(idxAs + 1)..], out type) ||
+                    type is not ExprIdentifier || 
+                    !((ExprIdentifier)type).Type.IsValueType()) return false;
             }
-            result = new StmtVarDef(idEx!, superType, type!, defInitial, isNullable, isPointer);
+            result = new StmtVarDef((ExprIdentifier)idEx!, superType, (ExprIdentifier)type!, defInitial, isNullable, isPointer);
             return true;
         }
     }

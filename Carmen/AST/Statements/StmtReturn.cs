@@ -1,19 +1,12 @@
 ﻿using Arcane.Carmen.Lexer.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtReturn(Expression? Value) : Statement
-    {
-        public override string ToString()
-        {
-            return Value is null ? "return;" : $"return {Value};";
-        }
-    }
+    /// <summary>
+    /// 'return' EXPRESSION?
+    /// </summary>
+    /// <param name="Value"></param>
+    public record StmtReturn(Expression? Value) : Statement;
 
     public class StmtReturnParser : StatementParser
     {

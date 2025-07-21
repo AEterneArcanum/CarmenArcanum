@@ -1,4 +1,5 @@
-﻿using Arcane.Carmen.Lexer.Tokens;
+﻿using Arcane.Carmen.AST.Expressions;
+using Arcane.Carmen.Lexer.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtImport(Expression Imported, Expression? Alias) : Statement
-    {
-        public override string ToString()
-        {
-            return Alias is null ? $"import {Imported};" : $"import {Imported} as {Alias};";
-        }
-    }
+    /// <summary>
+    /// 'import' STRINGLITERAL 'as' ALIAS_ID # 
+    /// </summary>
+    /// <param name="Imported"></param>
+    /// <param name="Alias"></param>
+    public record StmtImport(ExprStringLiteral Imported, ExprIdentifier Alias) : Statement;
+
     public class StmtImportParser : StatementParser
     {
         public StmtImportParser(int priority = StatementPriorities.Import) : base(priority)
@@ -26,11 +27,7 @@ namespace Arcane.Carmen.AST.Statements
                 return false;
             if (!tokens.TryGetFirstTopLayerIndexOf(TokenType.KeywordAs, out int index))
             {
-                // no alias
-                if (!Expression.TryParse(tokens[1..], out var imported))
-                    return false;
-                result = new StmtImport(imported!, null);
-                return true;
+                return false; // must alias
             }
             else
             {
@@ -38,11 +35,13 @@ namespace Arcane.Carmen.AST.Statements
                 if (index < 2 || index >= tokens.Length - 1)
                     return false;
                 if (!Expression.TryParse(tokens[1..index], out var imported) ||
-                    !Expression.TryParse(tokens[(index + 1)..], out var alias))
+                    imported is not ExprStringLiteral ||
+                    !Expression.TryParse(tokens[(index + 1)..], out var alias) ||
+                    alias is not ExprIdentifier || ((ExprIdentifier)alias).Type != IdentifierType.Alias)
                 {
                     return false;
                 }
-                result = new StmtImport(imported!, alias!);
+                result = new StmtImport((ExprStringLiteral)imported!, (ExprIdentifier)alias!);
                 return true;
             }
         }

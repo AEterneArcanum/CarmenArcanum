@@ -17,10 +17,27 @@ namespace Arcane.Carmen.AST.Expressions
         Type
     }
 
-    public record ExprIdentifier(string Name, IdentifierType Type) : Expression
+    public static class IdentifierTypeEx
     {
-        public override string ToString() => Name;
+        /// <summary>
+        /// Check if identifies a type of storable value in case i want to add classes/records and when i add enum definitions
+        /// !!! Will return true on alias further queries will be required for checking. !!!
+        /// </summary>
+        /// <param name="type">Type of identifier.</param>
+        /// <returns>Is it a type of storable value?.</returns>
+        public static bool IsValueType(this IdentifierType type)
+        {
+            return type switch
+            {
+                IdentifierType.Alias or
+                IdentifierType.Type or
+                IdentifierType.Structure => true,
+                _ => false
+            };
+        }
     }
+
+    public record ExprIdentifier(string Name, IdentifierType Type) : Expression;
 
     public class ExprIdentifierParser : ExpressionParser
     {

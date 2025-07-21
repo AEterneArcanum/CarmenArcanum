@@ -1,19 +1,16 @@
-﻿using Arcane.Carmen.Lexer.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Arcane.Carmen.AST.Expressions;
+using Arcane.Carmen.Lexer.Tokens;
 
 namespace Arcane.Carmen.AST.Statements
 {
-    public record StmtUsing(Expression Identifier, Expression Value) : Statement
-    {
-        public override string ToString()
-        {
-            return $"using {Identifier} = {Value};";
-        }
-    }
+    /// <summary>
+    /// 'using' VARIABLE_ID 'as' EXPRESSION
+    /// For defining or instancing must be cleaned at end of block
+    /// </summary>
+    /// <param name="Identifier"></param>
+    /// <param name="Value"></param>
+    public record StmtUsing(ExprIdentifier Identifier, Expression Value) : Statement;
+
     public class StmtUsingParser : StatementParser
     {
         public StmtUsingParser(int priority = StatementPriorities.Using) : base(priority)
@@ -29,11 +26,12 @@ namespace Arcane.Carmen.AST.Statements
             if (index < 2 || index >= tokens.Length - 1)
                 return false;
             if (!Expression.TryParse(tokens[1..index], out var identifier) ||
+                identifier is not ExprIdentifier || ((ExprIdentifier)identifier).Type != IdentifierType.Variable ||
                 !Expression.TryParse(tokens[(index + 1)..], out var value))
             {
                 return false;
             }
-            result = new StmtUsing(identifier!, value!);
+            result = new StmtUsing((ExprIdentifier)identifier!, value!);
             return true;
         }
     }
