@@ -11,4 +11,10 @@
     <ProjectReference Include="..\Carmen\Carmen.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="testScript.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

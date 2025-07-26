@@ -1,0 +1,9 @@
+﻿program:
+  vx is a byte.
+  set vx equal to 5.
+  label lstart.
+  if (vx == 0) then goto lend.
+  decrement vx.
+  goto lstart.
+  label lend.
+eb

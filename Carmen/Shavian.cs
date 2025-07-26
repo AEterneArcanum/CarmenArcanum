@@ -107,5 +107,6 @@
         /// <param name="c"></param>
         /// <returns></returns>
         public static bool IsPunctuation(char c) => Punctuation.Contains(c);
+        public static bool IsLetter(char c) => Alphabet.Any(x => x[0] == c);
     }
 }

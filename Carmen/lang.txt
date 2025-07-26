@@ -1,6 +1,9 @@
 ﻿# Whitespace is required by parser.
 # Parsed tokens will be combined into single tokens for AST parsing.
 
+# variables are explicitly code block local only accessile to code within their block and sub blocks except for global variables defined prior to entry point.
+# variable shadowing is not permitted
+
 # Math Precedence Table
 # 1. PARENTHESES
 # 2. INCREMENT/DECREMENT
@@ -49,18 +52,18 @@ INDEX_EXPRESSION --> EXPRESSION 'index' ('from last')? | 'index' EXPRESSION ('fr
 # Operations listed in precedence.
 MATH_OPERATION --> INCREMENT | DECREMENT | MODULUS | POWER | MULTIPLICATION | DIVISION | ADDITION | SUBTRACTION
 
-ADDITION --> 'the sum of' EXPRESSION 'and' EXPRESSION
-SUBTRACTION --> 'the difference of' EXPRESSION 'and' EXPRESSION
-MULTIPLICATION --> 'the product of' EXPRESSION 'and' EXPRESSION
-DIVISION --> 'the quotient of' EXPRESSION 'and' EXPRESSION
-MODULUS --> 'the modulo of' EXPRESSION 'and' EXPRESSION
-POWER --> EXPRESSION 'raised to the power of' EXPRESSION
+ADDITION --> ('the sum of' EXPRESSION 'and' EXPRESSION)
+SUBTRACTION --> ('the difference of' EXPRESSION 'and' EXPRESSION)
+MULTIPLICATION --> ('the product of' EXPRESSION 'and' EXPRESSION)
+DIVISION --> ('the quotient of' EXPRESSION 'and' EXPRESSION)
+MODULUS --> ('the modulo of' EXPRESSION 'and' EXPRESSION)
+POWER --> (EXPRESSION 'raised to the power of' EXPRESSION)
 INCREMENT --> INCREMENT_PRE | INCREMENT_POST
-INCREMENT_PRE --> 'increment' EXPRESSION
-INCREMENT_POST --> EXPRESSION 'increment'					
+INCREMENT_PRE --> ('increment' EXPRESSION)
+INCREMENT_POST --> (EXPRESSION 'increment')		
 DECREMENT --> DECREMENT_PRE | DECREMENT_POST
-DECREMENT_PRE --> 'decrement' EXPRESSION
-DECREMENT_POST --> EXPRESSION 'decrement'					
+DECREMENT_PRE --> ('decrement' EXPRESSION)
+DECREMENT_POST --> (EXPRESSION 'decrement')	
 
 LOGICAL_OPERATION --> AND | OR | NOT | XOR
 
@@ -167,14 +170,22 @@ DO_WHILE_LOOP --> 'do' STATEMENT 'while' EXPRESSION
 
 CONDITIONAL_STATEMENT --> 'if' EXPRESSION 'then' STATEMENT ('otherwise if' EXPRESSION 'then' STATEMENT)?+ ('otherwise' STATEMENT)?
 
-STRUCTURE_DEFINITION --> 'define structure' STRUCTURE_ID 'with' ARRAYLITERAL # <-- Of VARIABLE_DEFINITION # '; VARIABLE_DEFINITION, VARIABLE_DEFINITION, VARIABLE_DEFINITION, and VARIABLE_DEFINITION.'
-                        # Ended with EOS
+STRUCTURE_DEFINITION --> 'define structure' ('template')? STRUCTURE_ID 
+                            (STRUCTURE_INHERITANCE)? 
+                            (TEMPLATE_TYPES)? 
+                            'with:' BLOCK_STATEMENT <-- contining vars and funcs
+
+STRUCTURE_INHERITANCE --> 'inheriting' TYPE #Yes i see the keyword reuse
+TEMPLATE_TYPES --> 'for types;' TYPE_RESTRICTION (',' TYPE_RESTRICTION)*
+
+TYPE_RESTRICTION --> T 'inheriting' T ('and' T)*
 
 FUNCTION_DEFINITION --> 
-    'define function' FUNCTION_ID 
+    'define function' ('template')? FUNCTION_ID 
     ('for' STRUCTURE_ID)? 
+    (TEMPLATE_TYPES)?
     ('returning' VARIABLE_TYPES)?
-    ('with' FUNCTION_PARAMETERS)? # possible no parameters
+    ('with' FUNCTION_PARAMETERS)? # possible no parameters <--- Can use containing structure generics
     ':' STATEMENT # either single statement or a block statement
 FUNCTION_PARAMETERS --> ARRAYLITERAL << Of FUNCTION_PARAMETER
                       | FUNCTION_PARAMETER
@@ -192,8 +203,6 @@ VARIABLE_DEFINITION -->
             | 'pointer to' VARIABLE_TYPES ('equal to' EXPRESSION)?
           )
     )
-
-# NOT YET PARSED BELOW -----------------------------------------------------------------------------------------------------------------
 
 ENUM_DEFINITION --> 'define enum' STRUCT_ID 'with' NONKEYWORDSYMBOL, ... # values compared against keywords and literals during parse
 
@@ -216,4 +225,8 @@ MATCH_EXPRESSION -->
     (PATTERN 'to' EXPRESSION ',')* # <-- because 'match pattern to expression.'
     ('otherwise' EXPRESSION)?
 
+# The program is a single file with imports referencing single files only structs and functions will be imported maintaining scope
+# internal & private not visible to program file put still compiled properly
 
+# definitions structs, funcs, global vars and globals are at top of file followed by a program start label 'program:' or the like
+# followed by the execution

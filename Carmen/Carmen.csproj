@@ -9,7 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="AST\Expressions\cx2etgig.h1g~" />
+    <Compile Remove="Collector\**" />
+    <EmbeddedResource Remove="Collector\**" />
+    <None Remove="Collector\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Validator\" />
   </ItemGroup>
 
 </Project>
