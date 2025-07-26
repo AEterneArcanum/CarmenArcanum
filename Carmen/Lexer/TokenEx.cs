@@ -11,15 +11,15 @@ namespace Arcane.Carmen.Lexer
         public static string AsString(this List<Token> tokens)
         {
             string str = string.Empty;
-            tokens.Select(t => str += t.ToString() + " ");
-            return str;
+            foreach (Token token in tokens) { str += token.Content + " "; }
+            return str.TrimEnd();
         }
 
         public static string AsString(this IEnumerable<Token> tokens)
         {
             string str = string.Empty;
-            _ = tokens.Select(t => str += t.ToString() + " ");
-            return str;
+            foreach (Token token in tokens) { str += token.Content + " "; }
+            return str.TrimEnd();
         }
 
         public static Position GetPosition(this IEnumerable<Token> tokens)

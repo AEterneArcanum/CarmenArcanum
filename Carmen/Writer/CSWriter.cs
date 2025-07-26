@@ -113,12 +113,18 @@ public class CSWriter : IWriter
 
     private void Write(ASTEntryPoint entry)
     {
+        WriteLine("namespace Aracane;");
+        WriteLine("internal class Program { ");
+        indentLevel++;
+        sb.Append("static int Main(string[] args)");
         Write(entry.Code, false); // For now just dump in file
+        indentLevel--;
+        WriteLine("}");
     }
 
     private void Write(ASTBlock block)
     {
-        sb.Append('{');
+        WriteLine("{");
         indentLevel++;
         foreach (var itm in block.InnerNodes)
         {
@@ -175,7 +181,7 @@ public class CSWriter : IWriter
     private void Write(ASTLabel label)
     {
         Write(label.Identifier, true);
-        WriteLine(":");
+        WriteLine(":;");
     }
 
     private void Write(ASTIf aSTIf)

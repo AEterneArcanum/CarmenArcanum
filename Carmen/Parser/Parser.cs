@@ -134,7 +134,7 @@ public class CarmenParser
                     if (TryParse(tok, out var node))
                     {
                         Collection.Add(node);
-                        Log($"Parsed node {node}.");
+                        Log($"Parsed node {node.GetType()}.");
                     }
                     lst = i + 1;
                 }

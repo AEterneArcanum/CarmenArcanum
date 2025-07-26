@@ -11,7 +11,7 @@ namespace Testing
         {
             string fn = "testScript.txt";
             string fo = "out.cs";
-            bool noisy = true;
+            bool noisy = false;
             // Load tokens
             Console.WriteLine($"Loading file {fn}...");
             string content = File.ReadAllText("testScript.txt");
@@ -47,13 +47,16 @@ namespace Testing
             };
             parser.OnParserLog += (t) =>
             {
-                if (!noisy && t.Level != LogLevel.Noise)
+                if (noisy)
                 {
                     Console.WriteLine($"{t.Time} - {t.Log}");
                 }
                 else
                 {
-                    Console.WriteLine($"{t.Time} - {t.Log}");
+                    if (t.Level != LogLevel.Noise)
+                    {
+                        Console.WriteLine($"{t.Time} - {t.Log}");
+                    }
                 }
             };
             parser.ParseTokens([..toks]);
@@ -62,7 +65,15 @@ namespace Testing
 
             Console.WriteLine($"Writing to file {fo}...");
             var writer = new CSWriter();
-            writer.Write([..parser.ParsedNodes], fo);
+            try
+            {
+                writer.Write([..parser.ParsedNodes], fo);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                throw;
+            }
             Console.WriteLine($"Transcription completed successfully.");
         }
 
