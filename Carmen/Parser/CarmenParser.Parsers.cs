@@ -1,154 +1,22 @@
-﻿using Arcane.Carmen.AST;
+﻿using Arcane.Carmen.AST.Literals;
 using Arcane.Carmen.AST.Types;
+using Arcane.Carmen.AST;
 using Arcane.Carmen.Lexer;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Arcane.Carmen.Parser;
 
-public enum LogLevel
+public partial class CarmenParser
 {
-    Noise,
-    Regular,
-    Warning,
-    Error
-}
-public record ParserLogEntry(DateTime Time, LogLevel Level, string Log);
-public record ParserError(string Function, string message, Token[] Tokens);
-
-public class ParserException( string function, string message, 
-    IReadOnlyCollection<Token> tokens) 
-    : Exception(message)
-{
-    public string Function { get; init; } = function;
-    public IReadOnlyCollection<Token> Tokens { get; init; } = tokens;
-}
-
-public class CarmenParser
-{
-    public event Action<ParserLogEntry>? OnParserLog;
-    public event Action<ParserError>? OnParserError;
-
-    public readonly List<ParserLogEntry> LogEntries = [];
-    public readonly List<ParserError> ParserErrors = [];
-    public readonly List<ASTNode> ParsedNodes = [];
-
-    private void Throw(string src, string message, IEnumerable<Token> tokens)
-    {
-        throw new ParserException(src, message, (IReadOnlyCollection<Token>)tokens);
-    }
-
-    private void Log(string content, LogLevel level = LogLevel.Regular)
-    {
-        LogEntries.Add(new(DateTime.Now, level, content));
-        OnParserLog?.Invoke(LogEntries.Last());
-    }
-
-    private void Error(string src, string msg, Token[] tks) 
-    {
-        Log(msg, LogLevel.Error);
-        ParserErrors.Add(new(src, msg, tks));
-        OnParserError?.Invoke(ParserErrors.Last());
-    }
-
-    private void Warning(string src, string msg, Token[] tks)
-    {
-        Log($"{src}::{msg}", LogLevel.Warning);
-    }
-
-    public void Reset()
-    {
-        LogEntries.Clear();
-        ParserErrors.Clear();
-        ParsedNodes.Clear();
-    }
-
-    public void ParseTokens(Token[] tokens)
-    {
-        Log("Parsing tokens...");
-        if (tokens is null || tokens.Length == 0)
-        {
-            Log("No tokens passed returning.");
-            return;
-        }
-        Log($"{tokens.Length} passed.");
-        Log("Clearing comments and empty tokens from the passed tokens.");
-        var wrktk = new List<Token>();
-        foreach (var token in tokens)
-        {
-            if (token is not null &&
-                token.Content.Length != 0 &&
-                token.Type != TokenType.Comment &&
-                token.Type != TokenType.Whitespace)
-                wrktk.Add(token);
-        }
-        Log($"{wrktk.Count} tokens remain.");
-        if (wrktk.Count == 0)
-        {
-            Log("Returning.");
-            return;
-        }
-
-        Log("Iterating tokens.");
-        TryParseArray(ParsedNodes, [..wrktk]);
-
-        Log($"Attempt complete... {ParserErrors.Count} Errors...");
-    }
-
-    private bool TryParseArray(List<ASTNode> Collection, Token[] tokens)
-    {
-        int lst = 0; // last ep
-        int depth = 0; // block depth
-        for (int i = 0; i < tokens.Length; i++)
-        {
-            var token = tokens[i];
-            Log($"Targeting node {i}:{token.Content}", LogLevel.Noise);
-            if (!token.TryMatchKeyword(out var keyword))
-            {
-                Log($"Node {i}:{token.Content} is not a key token.", LogLevel.Noise);
-                continue;
-            }
-
-            switch (keyword)
-            {
-                case Keywords.OpenParen:
-                case Keywords.BlockStart:
-                    Log($"Node {i}:{token.Content} is opening a block.", LogLevel.Noise);
-                    depth++;
-                    break;
-                case Keywords.CloseParen:
-                case Keywords.BlockEnd:
-                    Log($"Node {i}:{token.Content} is closing a block.", LogLevel.Noise);
-                    depth--;
-                    break;
-            }
-
-            if (depth == 0 && (
-                keyword == Keywords.EOS ||
-                keyword == Keywords.BlockEnd))
-            {
-                Log($"Level zero terminator found at {i}.", LogLevel.Noise);
-                var tok = tokens[lst..i];
-                if (tok.Length != 0)
-                {
-                    // try parse tok and add to nodes
-                    if (TryParse(tok, out var node))
-                    {
-                        Collection.Add(node);
-                        Log($"Parsed node {node.GetType()}.");
-                    }
-                    lst = i + 1;
-                }
-            }
-        }
-        return true;
-    }
-
     private bool TryParseExpression(Token[] tokens, [NotNullWhen(true)] out ASTNode? output)
     {
-        Log($"Attempting to parse \"{tokens.AsString()}\" as an expression...");
+        Debug($"Attempting to parse \"{tokens.AsString()}\" as an expression...");
         return TryParseParenthized(tokens, out output)
             || TryParseLitBool(tokens, out output)
             || TryParseLitNumber(tokens, out output)
+            || TryParseLitString(tokens, out output)
+            || TryParseLitChar(tokens, out output)
+            || TryParseLitNull(tokens, out output)
             || TryParseIdentifier(tokens, out output)
             || TryParseComparison(tokens, out output)
             || TryParseDecrement(tokens, out output)
@@ -159,7 +27,7 @@ public class CarmenParser
     {
         try
         {
-            Log($"Attempting to parse \"{tokens.AsString()}\" as a statement...");
+            Debug($"Attempting to parse \"{tokens.AsString()}\" as a statement...");
             if (TryParseBlock(tokens, out output)
                 || TryParseIf(tokens, out output)
                 || TryParseAssignment(tokens, out output)
@@ -176,7 +44,7 @@ public class CarmenParser
         }
         catch (ParserException ex)
         {
-            Error(ex.Function, ex.Message, [..ex.Tokens]);
+            Error(ex.Function, ex.Message, [.. ex.Tokens]);
         }
         output = null;
         return false;
@@ -186,14 +54,14 @@ public class CarmenParser
     {
         output = null;
         if (tokens.Length < 3) return false; // true == true 3 min.
-        // Look for op
+                                             // Look for op
         Keywords[] opwords = [
             Keywords.IsEqualTo,
-            Keywords.IsNotEqualTo,
-            Keywords.IsGreaterThan,
-            Keywords.IsLessThan,
-            Keywords.IsLessThanOrEqualTo,
-            Keywords.IsGreaterThanOrEqualTo ];
+        Keywords.IsNotEqualTo,
+        Keywords.IsGreaterThan,
+        Keywords.IsLessThan,
+        Keywords.IsLessThanOrEqualTo,
+        Keywords.IsGreaterThanOrEqualTo ];
         int idxOp = Utils.NextTopLevelIndexOfKeywords(tokens, opwords, out var match);
         if (idxOp == -1) return false; // no opcode
         ASTComparisonOp opCode = match switch
@@ -222,7 +90,7 @@ public class CarmenParser
                 [.. tokens]);
             return false;
         }
-        output = new ASTComparison(tokens.GetPosition(), opCode, lex, rex);
+        output = new ASTComparison(tokens.GetASTPosition(), opCode, lex, rex);
         return true;
     }
 
@@ -240,7 +108,7 @@ public class CarmenParser
         {
             Error(nameof(TryParseBlock), "Error parsing block contents.", tokens);
         }
-        output = new ASTBlock(tokens.GetPosition(), [.. nodes]);
+        output = new ASTBlock(tokens.GetASTPosition(), [.. nodes]);
         return true;
     }
 
@@ -252,10 +120,10 @@ public class CarmenParser
             || !Utils.IsKeyword(tokens[0], Keywords.OpenParen)
             || !Utils.IsKeyword(tokens[^1], Keywords.CloseParen))
             return false; // Fast fail no error.
-        if (TryParseExpression(tokens[1..^1], out var inner) 
+        if (TryParseExpression(tokens[1..^1], out var inner)
             && inner is ASTExpression expr)
         {
-            output = new ASTParenthized(tokens.GetPosition(), expr);
+            output = new ASTParenthized(tokens.GetASTPosition(), expr);
             return true;
         }
         // Definitely parenthesis, definititely failed here.
@@ -282,12 +150,12 @@ public class CarmenParser
             Throw(nameof(TryParseIf), "Failed to parse if conditional expression.", tokens);
         }
         if (!TryParse(tokens[(idxThen + 1)..], out var body) ||
-            body is not IStandalone) 
+            body is not IStandalone)
         {
             // Definitely an if body parse failure.
             Throw(nameof(TryParseIf), "Failed to parse if body statement.", tokens);
         }
-        output = new ASTIf(tokens.GetPosition(), (ASTExpression)condition!, body!);
+        output = new ASTIf(tokens.GetASTPosition(), (ASTExpression)condition!, body!);
         return true;
     }
 
@@ -303,14 +171,14 @@ public class CarmenParser
         {
             if (!TryParseExpression(tokens[1..], out var expr))
                 Throw(nameof(TryParseIncrement), "Error paring inner increment statement.", tokens);
-            output = new ASTIncrement(tokens.GetPosition(), (ASTExpression)expr!, true);
+            output = new ASTIncrement(tokens.GetASTPosition(), (ASTExpression)expr!, true);
             return true;
         }
         else
         {
             if (!TryParseExpression(tokens[..^1], out var expr))
                 Throw(nameof(TryParseIncrement), "Error paring inner increment statement.", tokens);
-            output = new ASTIncrement(tokens.GetPosition(), (ASTExpression)expr!, false);
+            output = new ASTIncrement(tokens.GetASTPosition(), (ASTExpression)expr!, false);
             return true;
         }
     }
@@ -327,18 +195,18 @@ public class CarmenParser
         {
             if (!TryParseExpression(tokens[1..], out var expr))
                 Throw(nameof(TryParseDecrement), "Error paring inner decrement expression.", tokens);
-            output = new ASTDecrement(tokens.GetPosition(), (ASTExpression)expr!, true);
+            output = new ASTDecrement(tokens.GetASTPosition(), (ASTExpression)expr!, true);
             return true;
         }
         else
         {
             if (!TryParseExpression(tokens[..^1], out var expr))
                 Throw(nameof(TryParseDecrement), "Error paring inner decrement expression.", tokens);
-            output = new ASTDecrement(tokens.GetPosition(), (ASTExpression)expr!, false);
+            output = new ASTDecrement(tokens.GetASTPosition(), (ASTExpression)expr!, false);
             return true;
         }
     }
-    
+
     private bool TryParseAssignment(Token[] tokens, [NotNullWhen(true)] out ASTNode? output)
     {
         output = null;
@@ -358,29 +226,60 @@ public class CarmenParser
         // expression after 'to'
         if (!TryParseExpression(tokens[(idxTo + 1)..], out var valEx) ||
             valEx is not ASTExpression) Throw(nameof(TryParseAssignment), "Error parsing value expression in assignment statement.", tokens);
-        output = new ASTAssignment(tokens.GetPosition(), (ASTExpression)objEx!, (ASTExpression)valEx!);
+        output = new ASTAssignment(tokens.GetASTPosition(), (ASTExpression)objEx!, (ASTExpression)valEx!);
         return true;
     }
 
-    private bool TryParseLitNumber(Token[] tokens, [NotNullWhen(true)] out ASTNode? output)
+    private static bool TryParseLitChar(Token[] tokens, [NotNullWhen(true)] out ASTNode? output)
+    {
+        output = null;
+        if (tokens.Length != 1 || tokens[0].Type != TokenType.String)
+            return false;
+        var strVal = tokens[0].Content;
+        if (strVal[0] == '\'' && strVal[^1] == '\'') strVal = strVal[1..^1]; // Remove only enclosing apostrophes.
+        output = new ASTLitChar(tokens.GetASTPosition(), strVal);
+        return true;
+    }
+
+    private static bool TryParseLitNull(Token[] tokens, [NotNullWhen(true)] out ASTNode? output)
+    {
+        output = null;
+        if (tokens.Length != 1 || !Utils.IsKeyword(tokens[0], Keywords.Null))
+            return false;
+        output = new ASTLitNull(tokens.GetASTPosition());
+        return true;
+    }
+
+    private static bool TryParseLitString(Token[] tokens, [NotNullWhen(true)] out ASTNode? output)
+    {
+        output = null;
+        if (tokens.Length != 1 || tokens[0].Type != TokenType.String)
+            return false;
+        var strVal = tokens[0].Content;
+        if (strVal[0] == '"' && strVal[^1] == '"') strVal = strVal[1..^1]; // Remove only enclosing quotes.
+        output = new ASTLitString(tokens.GetASTPosition(), strVal);
+        return true;
+    }
+
+    private static bool TryParseLitNumber(Token[] tokens, [NotNullWhen(true)] out ASTNode? output)
     {
         output = null;
         if (tokens.Length != 1 || tokens[0].Type != TokenType.Number)
             return false;
-        output = new ASTLitNumber(tokens.GetPosition(), tokens[0].ConvertToWholeNumber());
+        output = new ASTLitNumber(tokens.GetASTPosition(), tokens[0].ConvertToWholeNumber());
         return true;
     }
 
-    private bool TryParseLitBool(Token[] tokens, [NotNullWhen(true)] out ASTNode? output)
+    private static bool TryParseLitBool(Token[] tokens, [NotNullWhen(true)] out ASTNode? output)
     {
         output = null;
         if (tokens.Length != 1
             || !Utils.IsKeyword(tokens[0], [Keywords.True, Keywords.False], out var match))
             return false;
-        output = new ASTLitBool(tokens.GetPosition(), match == Keywords.True);
+        output = new ASTLitBool(tokens.GetASTPosition(), match == Keywords.True);
         return true;
     }
-    
+
     private bool TryParseVarDef(Token[] tokens, [NotNullWhen(true)] out ASTNode? output)
     {
         output = null;
@@ -406,7 +305,7 @@ public class CarmenParser
         ASTTypeInfo info = new(typeId, wB, arraySize);
 
 
-        output = new ASTVariableDefinition(tokens.GetPosition(), identity, info);
+        output = new ASTVariableDefinition(tokens.GetASTPosition(), identity, info);
         return true;
     }
 
@@ -419,7 +318,7 @@ public class CarmenParser
             return false;
         if (!TryParseIdentifier([tokens[1]], out var nId) || nId is not ASTIdentifier)
             Throw(nameof(TryParseGoto), "Error parsing goto statement identifier.", tokens);
-        output = new ASTGoto(tokens.GetPosition(), (ASTIdentifier)nId!);
+        output = new ASTGoto(tokens.GetASTPosition(), (ASTIdentifier)nId!);
         return true;
     }
 
@@ -432,15 +331,15 @@ public class CarmenParser
             return false;
         if (!TryParseIdentifier([tokens[1]], out var nId) || nId is not ASTIdentifier)
             Throw(nameof(TryParseLabel), "Error parsing label statement identifier.", tokens);
-        output = new ASTLabel(tokens.GetPosition(), (ASTIdentifier)nId!);
+        output = new ASTLabel(tokens.GetASTPosition(), (ASTIdentifier)nId!);
         return true;
     }
 
-    private bool TryParseIdentifier(Token[] tokens, [NotNullWhen(true)] out ASTNode? output)
+    private static bool TryParseIdentifier(Token[] tokens, [NotNullWhen(true)] out ASTNode? output)
     {
         output = null;
         if (tokens.Length != 1 || tokens[0].TryMatchKeyword(out var _)) return false; // Keyword invalid id.
-        output = new ASTIdentifier(tokens.GetPosition(), tokens[0].Content);
+        output = new ASTIdentifier(tokens.GetASTPosition(), tokens[0].Content);
         return true;
     }
 
@@ -455,7 +354,7 @@ public class CarmenParser
         {
             Throw(nameof(TryParseEPoint), "Error parsing entry point statement.", tokens);
         }
-        output = new ASTEntryPoint(tokens.GetPosition(), code!);
+        output = new ASTEntryPoint(tokens.GetASTPosition(), code!);
         return true;
     }
 }

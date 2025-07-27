@@ -20,6 +20,7 @@ ARRAY_TYPE --> 'array' ('of size' EXPRESSION)? 'of' VARIABLE_TYPES
 			 #| 'array of' #COUNT EXPRESSION# VARIABLE_TYPES
              #| EXPRESSION VARIABLE_TYPES
 			 # ^^ Can't use this to parse complexity of multidimensional arrays/type collision
+             # 'size' EXPRESSION ('by' EXPRESSION)* <-- look for 'by' ? << multidimentional
 
 EXPRESSION --> IDENTIFIER | STRINGLITERAL | NUMBERLITERAL | BOOLEANLITERAL | NULLLITERAL | ARRAYLITERAL | CHARLITERAL
 			| MATH_OPERATION | LOGICAL_OPERATION | COMPARISON_OPERATION | ARRAY_ACCESS
@@ -31,21 +32,21 @@ ADDRESS_OF --> 'the address of' EXPRESSION # Returns the address of the expressi
 
 PARENTHISED_EXPRESSION --> '(' EXPRESSION ')'
 
-IDENTIFIER --> VARIABLE_IDENTIFIER | FUNCTION_ID | STRUCTURE_ID | LABEL_ID | ALIAS_ID # Added alias as a valid identifier / containing the identifier.
+IDENTIFIER --> VARIABLE_IDENTIFIER # | FUNCTION_ID | STRUCTURE_ID | LABEL_ID | ALIAS_ID # Added alias as a valid identifier / containing the identifier.
 VARIABLE_IDENTIFIER --> VARIABLE_ID | ARRAY_ACCESS | MEMBER_ACCESS # Added array access as a valid identifier / containing the identifier.
-VARIABLE_ID --> "$"[a-zA-Z_]*        #[a-zA-Z0-9_]* <-- current parser will not allow for digits
-FUNCTION_ID --> "@"[a-zA-Z_]*        #[a-zA-Z0-9_]*
-STRUCTURE_ID --> "#"[a-zA-Z_]*       #[a-zA-Z0-9_]*
-LABEL_ID --> ":"[a-zA-Z_]*           #[a-zA-Z0-9_]*
-ALIAS_ID --> "_"[a-zA-Z_]*           #[a-zA-Z0-9_]*
+VARIABLE_ID --> #[a-zA-Z0-9_]* # Current parser no longer needs prefix
+# FUNCTION_ID --> "@"[a-zA-Z_]*        #[a-zA-Z0-9_]*
+# STRUCTURE_ID --> "#"[a-zA-Z_]*       #[a-zA-Z0-9_]*
+# LABEL_ID --> ":"[a-zA-Z_]*           #[a-zA-Z0-9_]*
+# ALIAS_ID --> "_"[a-zA-Z_]*           #[a-zA-Z0-9_]*
 
 # Support escape sequences '\' in string and char literals
 STRINGLITERAL --> '"' [^"]* '"'
-NUMBERLITERAL --> [0-9]+ ('.' [0-9]+)? | 0x[0-9a-fA-F]+ | 0b[01]+ | 0o[0-7]+ # TODO: Implement extended number formats
+NUMBERLITERAL --> [0-9]+ ('.' [0-9]+)? | 0x[0-9a-fA-F]+ | 0b[01]+ | 0o[0-7]+
 BOOLEANLITERAL --> 'true' | 'false'
 NULLLITERAL --> 'null'
 CHARLITERAL --> "'" ( [^'\\] | '\\' [nrt'"\\] ) "'"
-ARRAYLITERAL --> ';' (EXPRESSION (',' EXPRESSION)*)? (', and ' EXPRESSION)?  # List terminated by logic EOS, parenthesized, to level keyword parse
+ARRAYLITERAL --> ';' (EXPRESSION (',' EXPRESSION)*)?  # List terminated by logic EOS, parenthesized, to level keyword parse
 ARRAY_ACCESS --> 'the' INDEX_EXPRESSION 'of' EXPRESSION
 INDEX_EXPRESSION --> EXPRESSION 'index' ('from last')? | 'index' EXPRESSION ('from last')? | 'initial index' | 'final index'
 
@@ -67,9 +68,9 @@ DECREMENT_POST --> (EXPRESSION 'decrement')
 
 LOGICAL_OPERATION --> AND | OR | NOT | XOR
 
+NOT --> 'not' EXPRESSION														# Process not after other logical operations to prevent collisions
 AND --> EXPRESSION 'and' EXPRESSION
 OR --> EXPRESSION 'or' EXPRESSION
-NOT --> 'not' EXPRESSION														# Process not after other logical operations to prevent collisions
 XOR --> EXPRESSION 'xor' EXPRESSION | EXPRESSION 'exclusive or' EXPRESSION
 
 COMPARISON_OPERATION --> EQUALS | NOT_EQUALS | GREATER_THAN | LESS_THAN | GREATER_THAN_OR_EQUAL_TO | LESS_THAN_OR_EQUAL_TO
@@ -132,8 +133,20 @@ PROGRAM --> (STATEMENT '.')*
 
 STATEMENT --> STATEMENT_BLOCK | ASSIGNMENT | VARIABLE_DEFINITION | CONDITIONAL_STATEMENT | FUNCTION_CALL_STMT | LABEL_STATEMENT | GOTO_STATEMENT | WHILE_LOOP
 			| DO_WHILE_LOOP | FOR_LOOP | FOREACH_LOOP | BREAK_STATEMENT | CONTINUE_STATEMENT | ITERATOR_LOOP | ASSERTION_STATEMENT | STRUCTURE_DEFINITION | FUNCTION_DEFINITION
-			| RETURN_STATEMENT | USING_STATEMENT | IMPORT_STATEMENT
+			| RETURN_STATEMENT | USING_STATEMENT | IMPORT_STATEMENT | ASM_STATEMENT | COMPOUND_ASSIGNMENT
 # Statements are separated by a period, but the last statement does not require a period.	
+
+ASM_STATEMENT --> 'asm' ('unsafe')? (ARCHITECTURE_MODIFIER)? 
+                  ('clobbers' STRINGLITERAL)? 
+                  STRINGLITERAL. <-- containing asm code for lexer simplex
+ARCHITECTURE_MODIFIER --> '16bit' | '32bit' | '64bit'
+
+COMPOUND_ASSIGNMENT --> 
+    ('add' EXPRESSION 'to' VARIABLE_IDENTIFIER) |
+    ('subtract' EXPRESSION 'from' VARIABLE_IDENTIFIER) |
+    ('multiply' VARIABLE_IDENTIFIER 'by' EXPRESSION) |
+    ('divide' VARIABLE_IDENTIFIER 'by' EXPRESSION) |
+    ('modulate' VARIABLE_IDENTIFIER 'with' EXPRESSION)
 
 RETURN_STATEMENT --> 'return' EXPRESSION?
 
@@ -168,6 +181,9 @@ FOR_LOOP --> 'for' VARIABLE_ID 'from' EXPRESSION 'to' EXPRESSION ('step' EXPRESS
 WHILE_LOOP --> 'while' EXPRESSION 'do' STATEMENT
 DO_WHILE_LOOP --> 'do' STATEMENT 'while' EXPRESSION
 
+# if i mandate expression is parenthised or statement is a block the then keyword is reasonably unnecessary
+# Parser will initially parse if/elif/else as separate statements >> Validator will move elifs and else to inner if
+# ex parser find if >> look for then ? parse : check paren | block >> parse
 CONDITIONAL_STATEMENT --> 'if' EXPRESSION 'then' STATEMENT ('otherwise if' EXPRESSION 'then' STATEMENT)?+ ('otherwise' STATEMENT)?
 
 STRUCTURE_DEFINITION --> 'define structure' ('template')? STRUCTURE_ID 
@@ -228,5 +244,48 @@ MATCH_EXPRESSION -->
 # The program is a single file with imports referencing single files only structs and functions will be imported maintaining scope
 # internal & private not visible to program file put still compiled properly
 
+# 
+
 # definitions structs, funcs, global vars and globals are at top of file followed by a program start label 'program:' or the like
 # followed by the execution
+
+▼ Concept general program structure ▼
+
+import "anyfile.scroll".
+
+define structure #point with:
+  definitions.
+eb
+
+define function @getX for #point with:
+  statements.
+eb
+
+define constant $counter equal to 0.
+
+program:
+  statements.
+eb
+
+▼ Concept structure for boot program writing with asm writer/compiler ▼
+
+# MODE 16.
+16 bit file imports
+16 bit instruction set variables/definitions
+
+# MODE 32.
+32 bit file imports
+32 bit instruction set variables/definitions
+
+# MODE 64.
+64 bit file imports
+64 bit instruction set variables/definitions
+
+program:
+  # MODE 16
+  16 bit run
+  # MODE 32
+  32 bit run
+  # MODE 64
+  64 bit run
+eb

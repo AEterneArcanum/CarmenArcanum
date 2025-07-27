@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Arcane.Carmen.AST.Types;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,4 +14,13 @@ public enum ASTComparisonOp
     LessThan, LessThanOrEqual,
     GreaterThan, GreaterThanOrEqual,
 }
-public record ASTComparison(Position Position, ASTComparisonOp Op, ASTExpression Left, ASTExpression Right):ASTExpression(Position);
+public record ASTComparison(
+    ASTPosition Position, 
+    ASTComparisonOp Op, 
+    ASTExpression Left, 
+    ASTExpression Right) 
+    : ASTExpression(Position), 
+        IHasInnerNodes
+{
+    public IEnumerable<ASTNode> Children => [Left, Right];
+}

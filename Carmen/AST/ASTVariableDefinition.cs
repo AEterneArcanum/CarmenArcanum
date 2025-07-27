@@ -1,3 +1,12 @@
 ﻿using Arcane.Carmen.AST.Types;
+
 namespace Arcane.Carmen.AST;
-public record ASTVariableDefinition(Position Position, ASTIdentifier Identifier, ASTTypeInfo Type) : ASTStatement(Position); 
+public record ASTVariableDefinition(
+    ASTPosition Position, 
+    ASTIdentifier Identifier, 
+    ASTTypeInfo Type) 
+    : ASTStatement(Position), 
+        IHasInnerNodes
+{
+    public IEnumerable<ASTNode> Children => [Identifier];
+}

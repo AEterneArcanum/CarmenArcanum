@@ -14,8 +14,4 @@
     <None Remove="Collector\**" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Validator\" />
-  </ItemGroup>
-
 </Project>

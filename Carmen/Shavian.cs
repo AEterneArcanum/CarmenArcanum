@@ -2,7 +2,7 @@
 {
     /// <summary>
     /// Functions and properties related to the Shavian alphabet.
-    /// A generally terrible Alphabet, that does not follow its own base requirements.
+    /// A generally terrible Alphabet, that does not follow its stated goals.
     /// </summary>
     public class Shavian
     {
@@ -104,9 +104,14 @@
         /// <summary>
         /// Check if a character is part of the Shavian alphabet's punctuation.
         /// </summary>
-        /// <param name="c"></param>
+        /// <param name="c">The character.</param>
         /// <returns></returns>
         public static bool IsPunctuation(char c) => Punctuation.Contains(c);
+        /// <summary>
+        /// Check if a character is member to the Shavian alphabet.
+        /// </summary>
+        /// <param name="c">The character.</param>
+        /// <returns></returns>
         public static bool IsLetter(char c) => Alphabet.Any(x => x[0] == c);
     }
 }

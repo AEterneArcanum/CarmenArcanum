@@ -1,4 +1,14 @@
 ﻿
+
+using Arcane.Carmen.AST.Types;
+
 namespace Arcane.Carmen.AST;
 
-public record ASTParenthized(Position Position, ASTExpression InnerExpr) : ASTExpression(Position);
+public record ASTParenthized(
+    ASTPosition Position, 
+    ASTExpression InnerExpr) 
+    : ASTExpression(Position), 
+        IHasInnerNodes
+{
+    public IEnumerable<ASTNode> Children => [InnerExpr];
+}

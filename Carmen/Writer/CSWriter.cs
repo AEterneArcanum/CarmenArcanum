@@ -1,14 +1,11 @@
 ﻿using Arcane.Carmen.AST;
+using Arcane.Carmen.AST.Literals;
 using Arcane.Carmen.AST.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Arcane.Carmen.Writer;
 
-public class CSWriter : IWriter
+public class CSWriter : Writer
 {
     private readonly StringBuilder sb;
     private int indentLevel = 0;
@@ -20,59 +17,42 @@ public class CSWriter : IWriter
         sb.Append(GetIndent());
     }
 
-    public CSWriter() { sb = new(); }
-    /// <summary>
-    /// Transcribe an ast node array to a specified file.
-    /// </summary>
-    /// <param name="nodes"></param>
-    /// <param name="filename"></param>
-    /// <exception cref="Exception"></exception>
-    public void Write(ASTNode[] nodes, string filename)
+    public CSWriter() : base() { sb = new(); }
+
+    public override void Clear()
     {
         sb.Clear();
-        if (!Validate(nodes))
-            throw new Exception("Unsupported nodes detected in code!");
-        foreach (ASTNode node in nodes) {
-            Write(node);
-        }
-        File.WriteAllText(filename, sb.ToString());
     }
-    /// <summary>
-    /// Check an ast node array for unssuported code.
-    /// </summary>
-    /// <param name="nodes"></param>
-    /// <returns></returns>
-    public bool Validate(ASTNode[] nodes)
+    public override void SaveFile(string filename)
     {
-        bool clean = true;
-        foreach (var node in nodes) {
-            switch (node)
-            {
-                case ASTAssignment:
-                case ASTBlock:
-                case ASTDecrement:
-                case ASTEntryPoint:
-                case ASTGoto:
-                case ASTIdentifier:
-                case ASTIf:
-                case ASTIncrement:
-                case ASTLabel:
-                case ASTLitBool:
-                case ASTLitNumber:
-                case ASTParenthized:
-                case ASTVariableDefinition:
-                case ASTComparison:
-                    continue;
-                default:
-                    Console.WriteLine($"Node {node.GetType()} not supported by {nameof(CSWriter)}");
-                    clean = false;
-                    continue;
-            }
-        }
-        return clean;
+        File.WriteAllText($"{filename}.cs", sb.ToString());
     }
-
-    private void Write(ASTNode node, bool subExpr = false)
+    public override bool ValidateNode(ASTNode node)
+    {
+        switch (node)
+        {
+            case ASTAssignment:
+            case ASTBlock:
+            case ASTDecrement:
+            case ASTEntryPoint:
+            case ASTGoto:
+            case ASTIdentifier:
+            case ASTIf:
+            case ASTIncrement:
+            case ASTLabel:
+            case ASTLitBool:
+            case ASTLitNumber:
+            case ASTLitString:
+            case ASTLitChar:
+            case ASTParenthized:
+            case ASTVariableDefinition:
+            case ASTComparison:
+                return true;
+            default:
+                return false;
+        }
+    }
+    public override void WriteNode(ASTNode node, bool subExpr = false)
     {
         switch (node)
         {
@@ -86,17 +66,33 @@ public class CSWriter : IWriter
             case ASTIncrement increment: Write(increment, subExpr); break;
             case ASTIf aSTIf: Write(aSTIf); break;
             case ASTLitNumber lt: Write(lt); break;
+            case ASTLitString ls: Write(ls); break;
+            case ASTLitChar lc: Write(lc); break;
             case ASTBlock block: Write(block); break;
             case ASTGoto gootoo: Write(gootoo); break;
             case ASTDecrement decrement: Write(decrement, subExpr); break;
             case ASTEntryPoint ep: Write(ep); break;
-            default: throw new NotImplementedException($"Node {node.GetType()} not supported by {nameof(CSWriter)}");
+            default: LogError($"Node {node.GetType()} not supported by {nameof(CSWriter)}"); break;
         }
+    }
+
+    private void Write(ASTLitChar lc)
+    {
+        sb.Append('\'');
+        sb.Append(lc.Value);
+        sb.Append('\'');
+    }
+
+    private void Write(ASTLitString aSTLitString)
+    {
+        sb.Append('"'); 
+        sb.Append(aSTLitString.Value); 
+        sb.Append('"');
     }
 
     private void Write(ASTComparison compa)
     {
-        Write(compa.Left);
+        WriteNode(compa.Left);
         sb.Append(' ');
         sb.Append(compa.Op switch
         {
@@ -108,7 +104,7 @@ public class CSWriter : IWriter
             ASTComparisonOp.GreaterThanOrEqual => ">= ",
             _ => ""
         });
-        Write(compa.Right);
+        WriteNode(compa.Right);
     }
 
     private void Write(ASTEntryPoint entry)
@@ -117,7 +113,7 @@ public class CSWriter : IWriter
         WriteLine("internal class Program { ");
         indentLevel++;
         sb.Append("static int Main(string[] args)");
-        Write(entry.Code, false); // For now just dump in file
+        WriteNode(entry.Code, false); // For now just dump in file
         indentLevel--;
         WriteLine("}");
     }
@@ -128,7 +124,7 @@ public class CSWriter : IWriter
         indentLevel++;
         foreach (var itm in block.InnerNodes)
         {
-            Write(itm);
+            WriteNode(itm);
         }
         indentLevel--;
         WriteLine("}");
@@ -137,17 +133,33 @@ public class CSWriter : IWriter
     private void Write(ASTParenthized parenthized)
     {
         sb.Append('(');
-        Write(parenthized.InnerExpr);
+        WriteNode(parenthized.InnerExpr);
         sb.Append(')');
     }
 
     private string GetTypeString(ASTTypeInfo Type)
     {
         return Type.Type switch { 
-            BasicTypes.Byte => "byte",
-            BasicTypes.Short => "short",
+            Primitives.Byte => "byte",
+            Primitives.SByte => "signed byte",
+            Primitives.Short => "short",
+            Primitives.UShort => "unsigned short",
+            Primitives.Integer => "int",
+            Primitives.UInteger => "unsingned int",
+            Primitives.Long => "long",
+            Primitives.ULong => "unsigned long",
+            Primitives.Float => "float",
+            Primitives.Double => "double",
+            Primitives.Decimal => "decimal",
+            Primitives.Void => "void",
+            Primitives.String => "string",
             _ => Type.Identifier
         };
+    }
+
+    private void WriteType(ASTTypeInfo typeInfo)
+    {
+        // Implement after type expansion
     }
 
     private void Write(ASTVariableDefinition variableDefinition)
@@ -180,16 +192,16 @@ public class CSWriter : IWriter
 
     private void Write(ASTLabel label)
     {
-        Write(label.Identifier, true);
+        WriteNode(label.Identifier, true);
         WriteLine(":;");
     }
 
     private void Write(ASTIf aSTIf)
     {
         sb.Append("if (");
-        Write(aSTIf.Condition, true);
+        WriteNode(aSTIf.Condition, true);
         sb.Append(") ");
-        Write(aSTIf.Body, false); // Body should have the correct c# block ar single statement terminator.
+        WriteNode(aSTIf.Body, false); // Body should have the correct c# block ar single statement terminator.
     }
     
     private void Write(ASTIdentifier identifier)
@@ -200,14 +212,14 @@ public class CSWriter : IWriter
     private void Write(ASTGoto @goto)
     {
         sb.Append("goto ");
-        Write(@goto.Identifier, true);
+        WriteNode(@goto.Identifier, true);
         WriteLine(";");
     }
 
     private void Write(ASTIncrement increment, bool subExpr = false)
     {
         if (increment.IsPrefix) sb.Append("++");
-        Write(increment.Expression, true);
+        WriteNode(increment.Expression, true);
         if (!increment.IsPrefix) sb.Append("++");
         if (!subExpr) WriteLine(";");
     }
@@ -215,16 +227,16 @@ public class CSWriter : IWriter
     private void Write(ASTDecrement decrement, bool subExpr = false)
     {
         if (decrement.IsPrefix) sb.Append("--");
-        Write(decrement.Expression, true);
+        WriteNode(decrement.Expression, true);
         if (!decrement.IsPrefix)sb.Append("--");
         if (!subExpr) WriteLine(";");
     }
 
     private void Write(ASTAssignment assignment)
     {
-        Write(assignment.Object, true);
+        WriteNode(assignment.Object, true);
         sb.Append(" = ");
-        Write(assignment.Value, true);
+        WriteNode(assignment.Value, true);
         WriteLine(";");
     }
 }

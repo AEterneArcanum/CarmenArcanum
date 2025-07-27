@@ -1,9 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Arcane.Carmen.AST.Types;
 
 namespace Arcane.Carmen.AST;
 
-public record ASTDecrement(Position Position, ASTExpression Expression, bool IsPrefix) : ASTExpression(Position), IStandalone;
+public record ASTDecrement(
+    ASTPosition Position, 
+    ASTExpression Expression, 
+    bool IsPrefix) 
+    : ASTExpression(Position), 
+        IStandalone, 
+        IHasInnerNodes
+{
+    public IEnumerable<ASTNode> Children => [Expression];
+}
