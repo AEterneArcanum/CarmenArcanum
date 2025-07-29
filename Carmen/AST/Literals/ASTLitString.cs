@@ -11,7 +11,7 @@ namespace Arcane.Carmen.AST.Literals
     {
         public override string ToString()
         {
-            return Value;
+            return $"\"{Value}\"";
         }
     }
 }

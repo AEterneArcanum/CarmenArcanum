@@ -1,7 +1,7 @@
-﻿
+﻿using Arcane.Carmen.AST.Literals;
 using Arcane.Carmen.AST.Types;
 
-namespace Arcane.Carmen.AST;
+namespace Arcane.Carmen.AST.Statements;
 public record ASTGoto(
     ASTPosition Position, 
     ASTIdentifier Identifier) 
@@ -9,4 +9,5 @@ public record ASTGoto(
         IHasInnerNodes
 {
     public IEnumerable<ASTNode> Children => [Identifier];
+    public override string ToString() => $"goto {Identifier}";
 }

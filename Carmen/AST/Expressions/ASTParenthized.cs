@@ -1,8 +1,6 @@
-﻿
+﻿using Arcane.Carmen.AST.Types;
 
-using Arcane.Carmen.AST.Types;
-
-namespace Arcane.Carmen.AST;
+namespace Arcane.Carmen.AST.Expressions;
 
 public record ASTParenthized(
     ASTPosition Position, 
@@ -11,4 +9,5 @@ public record ASTParenthized(
         IHasInnerNodes
 {
     public IEnumerable<ASTNode> Children => [InnerExpr];
+    public override string ToString() => $"({InnerExpr})";
 }

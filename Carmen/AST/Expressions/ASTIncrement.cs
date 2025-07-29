@@ -1,8 +1,8 @@
 ﻿using Arcane.Carmen.AST.Types;
 
-namespace Arcane.Carmen.AST;
+namespace Arcane.Carmen.AST.Expressions;
 
-public record ASTDecrement(
+public record ASTIncrement(
     ASTPosition Position, 
     ASTExpression Expression, 
     bool IsPrefix) 
@@ -11,4 +11,5 @@ public record ASTDecrement(
         IHasInnerNodes
 {
     public IEnumerable<ASTNode> Children => [Expression];
+    public override string ToString() => IsPrefix ? $"++{Expression}" : $"{Expression}++";
 }

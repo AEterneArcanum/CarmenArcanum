@@ -1,11 +1,6 @@
 ﻿using Arcane.Carmen.AST.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Arcane.Carmen.AST;
+namespace Arcane.Carmen.AST.Statements;
 
 public record ASTIf(
     ASTPosition Position, 
@@ -15,4 +10,5 @@ public record ASTIf(
         IHasInnerNodes
 {
     public IEnumerable<ASTNode> Children => [Condition, Body];
+    public override string ToString() => $"if ({Condition}) {Body};";
 }

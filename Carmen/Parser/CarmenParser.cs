@@ -76,7 +76,7 @@ public partial class CarmenParser
         Log($"Attempt complete... {ParserErrors.Count} Errors...");
     }
 
-    private bool TryParseArray(List<ASTNode> Collection, Token[] tokens)
+    private bool TryParseArray(List<ASTNode> Collection, CarmenToken[] tokens)
     {
         int lst = 0; // last ep
         int depth = 0; // block depth

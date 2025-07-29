@@ -6,6 +6,6 @@ public record ASTLitBool(ASTPosition Position, bool Value) : ASTExpression(Posit
 {
     public override string ToString()
     {
-        return Value ? "TRUE" : "FALSE";
+        return Value ? "true" : "false";
     }
 }

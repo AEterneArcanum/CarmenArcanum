@@ -3,6 +3,7 @@
 public enum Primitives
 {
     NotBase,
+    Array,
     Byte,
     SByte,
     Short,

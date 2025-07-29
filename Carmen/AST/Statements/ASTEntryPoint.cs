@@ -1,7 +1,6 @@
-﻿
-using Arcane.Carmen.AST.Types;
+﻿using Arcane.Carmen.AST.Types;
 
-namespace Arcane.Carmen.AST;
+namespace Arcane.Carmen.AST.Statements;
 /// <summary>
 /// Represents the programs main entry point in the code.
 /// </summary>
@@ -12,4 +11,8 @@ public record ASTEntryPoint(
         IHasInnerNodes
 {
     public IEnumerable<ASTNode> Children => [Code];
+    public override string ToString()
+    {
+        return $"program: {Code};";
+    }
 }

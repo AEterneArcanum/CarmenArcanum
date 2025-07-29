@@ -1,5 +1,7 @@
 ﻿using Arcane.Carmen.AST;
+using Arcane.Carmen.AST.Expressions;
 using Arcane.Carmen.AST.Literals;
+using Arcane.Carmen.AST.Statements;
 using Arcane.Carmen.AST.Types;
 using System.Text;
 
@@ -31,6 +33,11 @@ public class CSWriter : Writer
     {
         switch (node)
         {
+            case ASTMath:
+            case ASTBoolean:
+            case ASTBooleanNot:
+            case ASTArrayAccess:
+            case ASTLitList:
             case ASTAssignment:
             case ASTBlock:
             case ASTDecrement:
@@ -56,6 +63,11 @@ public class CSWriter : Writer
     {
         switch (node)
         {
+            case ASTMath meth: Write(meth); break;
+            case ASTBoolean boop: Write(boop); break;
+            case ASTBooleanNot bn: Write(bn); break;
+            case ASTArrayAccess aa: Write(aa) ; break;
+            case ASTLitList list: Write(list); break;
             case ASTComparison compa: Write(compa); break;
             case ASTAssignment assignment: Write(assignment); break;
             case ASTVariableDefinition variableDefinition: Write(variableDefinition); break;
@@ -74,6 +86,60 @@ public class CSWriter : Writer
             case ASTEntryPoint ep: Write(ep); break;
             default: LogError($"Node {node.GetType()} not supported by {nameof(CSWriter)}"); break;
         }
+    }
+
+    private void Write(ASTMath meth)
+    {
+        WriteNode(meth.Left);
+        sb.Append(meth.Op switch
+        {
+            ASTMathOp.Add => " + ",
+            ASTMathOp.Subtract => " - ",
+            ASTMathOp.Divide => " / ",
+            ASTMathOp.Modulo => " % ",
+            ASTMathOp.Multiply => " * ",
+            ASTMathOp.Power => " ^ ",
+            ASTMathOp.Root or
+            _ => " ERROR "
+        });
+        WriteNode(meth.Right);
+    }
+
+    private void Write(ASTBoolean boop)
+    {
+        WriteNode(boop);
+        sb.Append(boop.Op switch {
+            ASTBooleanOp.Or => "||",
+            ASTBooleanOp.And => "&&",
+            ASTBooleanOp.Xor => "^",
+            _ => "ERROR",
+            });
+        WriteNode(boop);
+    }
+
+    private void Write(ASTBooleanNot booleanNot)
+    {
+        sb.Append('!');
+        WriteNode(booleanNot.InnerExpression);
+    }
+
+    private void Write(ASTArrayAccess arrayAccess)
+    {
+        WriteNode(arrayAccess.Object);
+        sb.Append('[');
+        WriteNode(arrayAccess.Index); 
+        sb.Append("]");
+    }
+
+    private void Write(ASTLitList list)
+    {
+        sb.Append('[');
+        foreach (var item in list.ListItems)
+        {
+            WriteNode(item);
+            sb.Append(",");
+        }
+        sb.Append(']');
     }
 
     private void Write(ASTLitChar lc)
@@ -102,7 +168,7 @@ public class CSWriter : Writer
             ASTComparisonOp.GreaterThan => "> ",
             ASTComparisonOp.LessThanOrEqual => "<= ",
             ASTComparisonOp.GreaterThanOrEqual => ">= ",
-            _ => ""
+            _ => "ERROR"
         });
         WriteNode(compa.Right);
     }
@@ -151,27 +217,111 @@ public class CSWriter : Writer
             Primitives.Float => "float",
             Primitives.Double => "double",
             Primitives.Decimal => "decimal",
+            Primitives.Array => "array",
             Primitives.Void => "void",
             Primitives.String => "string",
             _ => Type.Identifier
         };
     }
 
-    private void WriteType(ASTTypeInfo typeInfo)
+    private void WriteArraySizeInfo(ASTArrayInfo info)
     {
-        // Implement after type expansion
+        switch (info.ContentType.Type)
+        {
+            case Primitives.Void: // Unsupported CS
+                LogError($"Unsupported variable primitive void.");
+                break;
+            case Primitives.Array:
+                if (info.ContentType.ArraySize is null)
+                {
+                    LogError("Array without size data.");
+                    break;
+                }
+                WriteArraySizeInfo(info.ContentType.ArraySize);
+                sb.Append('[');
+                
+                for (int i = 0; i < info.Dimensions.Length; i++)
+                {
+                    WriteNode(info.Dimensions[i]);
+                    if (i < info.Dimensions.Length - 1)
+                        sb.Append(", ");
+                }
+
+                sb.Append(']');
+                break;
+            default:
+                sb.Append(GetTypeString(info.ContentType));
+                break;
+        }
+    }
+
+    private bool CheckPointer(ASTTypeInfo typeInfo)
+    {
+        switch (typeInfo.Type)
+        {
+            case Primitives.Array:
+                if (typeInfo.ArraySize is not null && typeInfo.ArraySize.ContentType is not null)
+                    return CheckNullable(typeInfo.ArraySize.ContentType);
+                LogError("Error checking array pointedness.");
+                break;
+            default:
+                return typeInfo.Pointer;
+        }
+        return false;
+    }
+
+    private bool CheckNullable(ASTTypeInfo typeInfo)
+    {
+        switch (typeInfo.Type)
+        {
+            case Primitives.Array:
+                if (typeInfo.ArraySize is not null && typeInfo.ArraySize.ContentType is not null)
+                    return CheckNullable(typeInfo.ArraySize.ContentType);
+                LogError("Error checking array nullability.");
+                break;
+            default:
+                return typeInfo.Nullable;
+        }
+        return false;
+    }
+
+    private void WriteTypeInfo(ASTTypeInfo typeInfo)
+    {
+        if (CheckPointer(typeInfo))
+            LogError("Pointers not supported by CS");
+        switch (typeInfo.Type)
+        {
+            case Primitives.Void: // Unsupported CS
+                LogError($"Unsupported variable primitive void.");
+                break;
+            case Primitives.Array:
+                if (typeInfo.ArraySize is null)
+                {
+                    LogError("Array without size data.");
+                    break;
+                }
+                WriteArraySizeInfo(typeInfo.ArraySize);
+                break;
+            default:
+                sb.Append(GetTypeString(typeInfo));
+                break;
+        }
+        if (CheckNullable(typeInfo))
+            sb.Append('?');
     }
 
     private void Write(ASTVariableDefinition variableDefinition)
     {
-        sb.Append(GetTypeString(variableDefinition.Type));
-        if (variableDefinition.Type.ArraySize >= 0)
+        //sb.Append("public ");
+
+        sb.Append(variableDefinition.VariableType switch
         {
-            sb.Append('['); // Multidimentional array access and support later "[,]"
-            if (variableDefinition.Type.ArraySize > 0)
-                sb.Append(variableDefinition.Type.ArraySize.ToString());
-            sb.Append(']');
-        }
+            ASTVariableType.Static => "static ",
+            ASTVariableType.Constant => "const ",
+            _ => ""
+        });
+
+        WriteTypeInfo(variableDefinition.Type);
         sb.Append(' ');
         Write(variableDefinition.Identifier);
 
@@ -206,7 +356,7 @@ public class CSWriter : Writer
     
     private void Write(ASTIdentifier identifier)
     {
-        sb.Append(identifier.Identifier);
+        sb.Append(identifier.Identifier.TrimStart(['$','#','@', '·']));
     }
 
     private void Write(ASTGoto @goto)

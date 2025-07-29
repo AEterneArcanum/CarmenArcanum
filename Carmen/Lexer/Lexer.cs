@@ -111,9 +111,22 @@ public static class Lexer
                 stringBuilder.Append(c);
                 state.InString = true;
                 break;
+            case '?':
+                if (i + 1 < raw.Length && raw[i + 1] == '?') // ??
+                {
+                    stringBuilder.Append(c);
+                    stringBuilder.Append(raw[i + 1]);
+                    i++; state.Column++;
+                    AddToken(tokens, stringBuilder, ref state, TokenType.Operators);
+                    break;
+                }
+                goto DEFAULT;
             case '-':
                 HandleNumeric(raw, ref i, ref state, stringBuilder, tokens);
                 break;
+            case '$': // Allow cash and hash and at as id prefixes
+            case '@':
+            case '#':
             case '·': // Shavian namer symbol belongs to following word.
                 HandleIdentifier(raw, ref i, ref state, stringBuilder, tokens);
                 break;
@@ -161,9 +174,8 @@ public static class Lexer
                     break;
                 }
                 goto EQUALS;
-            case '=':
             case '!': // compound equals
-            EQUALS:
+            case '=': EQUALS:
                 //FlushBuffer(stringBuilder, tokens, ref state);
                 if (i + 1 < raw.Length && raw[i + 1] == '=')
                 {
@@ -177,8 +189,7 @@ public static class Lexer
                 TokenType t2 = IsOperator(c) ? TokenType.Operators : TokenType.Punctuation;
                 AddToken(tokens, stringBuilder, ref state, t2);
                 break;
-            default:
-            DEFAULT:
+            default: DEFAULT:
                 //FlushBuffer( stringBuilder, tokens, ref state );
                 stringBuilder.Append(c);
                 TokenType type = IsOperator(c) ? TokenType.Operators : TokenType.Punctuation;
@@ -316,10 +327,10 @@ public static class Lexer
     /// <returns>Token(s).</returns>
     public static List<Token> Parse(string raw, string filename)
     {
-        List<Token> tokens = new List<Token>();
-        StringBuilder sb = new StringBuilder();
-        StringBuilder cb = new StringBuilder();
-        LexerState state = new LexerState() 
+        List<Token> tokens = [];
+        StringBuilder sb = new();
+        StringBuilder cb = new();
+        LexerState state = new() 
         { 
             Filename = filename 
         };

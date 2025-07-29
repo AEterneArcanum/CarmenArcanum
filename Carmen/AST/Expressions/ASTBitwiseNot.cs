@@ -1,0 +1,17 @@
+﻿using Arcane.Carmen.AST.Types;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Arcane.Carmen.AST.Expressions
+{
+    public record ASTBitwiseNot(
+        ASTPosition Position,
+        ASTExpression InnerExpr)
+        : ASTExpression(Position), IHasInnerNodes
+    {
+        public IEnumerable<ASTNode> Children => [InnerExpr];
+    }
+}
