@@ -14,12 +14,6 @@ public partial class CarmenParser
     public readonly List<ASTNode> ParsedNodes = [];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Throw(string src, string message, IEnumerable<Token> tokens)
-    {
-        throw new ParserException(src, message, (IReadOnlyCollection<Token>)tokens);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Log(string content, LogLevel level = LogLevel.Info)
     {
         LogBook.Log(content, level);
@@ -80,6 +74,9 @@ public partial class CarmenParser
     {
         int lst = 0; // last ep
         int depth = 0; // block depth
+
+        bool inDo = false;
+
         for (int i = 0; i < tokens.Length; i++)
         {
             var token = tokens[i];
@@ -89,6 +86,21 @@ public partial class CarmenParser
                 Debug($"Node {i}:{token.Content} is not a key token.");
                 continue;
             }
+
+            // Should catch as we move into as statement
+            if (depth == 0 &&
+                keyword == Keywords.Do)
+            {
+                // Is ;do or }do ... not end of while...do
+                if (i == 0 || 
+                    (i > 0 && 
+                    (tokens[i - 1].IsKeyword(Keywords.EOS) ||
+                    tokens[i - 1].IsKeyword(Keywords.BlockEnd))))
+                {
+                    inDo = true;
+                    continue;
+                }
+            } 
 
             switch (keyword)
             {
@@ -108,6 +120,15 @@ public partial class CarmenParser
                 keyword == Keywords.EOS ||
                 keyword == Keywords.BlockEnd))
             {
+                if (keyword == Keywords.BlockEnd &&
+                    inDo && i + 1 < tokens.Length &&
+                    tokens[i + 1].IsKeyword(Keywords.While))
+                {
+                    // End of do block continue to end of while expression
+                    inDo = false; 
+                    continue;
+                }
+
                 Debug($"Level zero terminator found at {i}.");
                 var tok = tokens[lst..i];
                 if (tok.Length != 0)

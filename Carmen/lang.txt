@@ -1,4 +1,6 @@
-﻿# Whitespace is required by parser.
+﻿# Flow Lexer Makes token -> Parser turns to raw ast -> "organizer" sorts into abstact environment -> Validator checks types and identifiers -> Writers write code CS>>C>>ASM
+
+# Whitespace is required by parser.
 # Parsed tokens will be combined into single tokens for AST parsing.
 
 # variables are explicitly code block local only accessile to code within their block and sub blocks except for global variables defined prior to entry point.
@@ -62,7 +64,7 @@ MULTIPLICATION --> ('the product of' EXPRESSION 'and' EXPRESSION) | (EXPRESSION 
 DIVISION --> ('the quotient of' EXPRESSION 'and' EXPRESSION) | (EXPRESSION ('divided by'|'/') EXPRESSION)
 MODULUS --> ('the modulo of' EXPRESSION 'and' EXPRESSION) | (EXPRESSION '%' EXPRESSION)
 POWER --> (EXPRESSION 'raised to the power of' EXPRESSION)
-ROOT --> (EXPRESSION 'root of' EXPRESSION)
+ROOT --> (EXPRESSION 'root of' EXPRESSION) | (EXPRESSION '√' EXPRESSION) # Symbol is Alt+251
 
 
 
@@ -111,29 +113,30 @@ NUL_COALESCE_OPERATION --> EXPRESSION ', if not null, otherwise' EXPRESSION
 CONCAT_OPERATION --> EXPRESSION 'concatenated with' EXPRESSION
 
 MEMBER_ACCESS -->  EXPRESSION ''s' EXPRESSION # person''s' name
-
-
-
-
-
 ARRAY_SLICE --> 'elements' ('from' EXPRESSION)? ('until' EXPRESSION)? 'of' EXPRESSION
 ARRAY_STRIDE --> 'every' EXPRESSION 'element of' EXPRESSION
 TERNARY_OPERATION --> 'if' EXPRESSION 'then' EXPRESSION 'otherwise' EXPRESSION
 
-
-# safe cast will return nullable
+# safe cast will return nullable # safe default
 TYPE_CAST --> ('safe' | 'unsafe')? 'cast' EXPRESSION 'as a' EXPRESSION	# first expression resolves to data point, second expression resolves to type
+
+MATCH_EXPRESSION -->
+    'match EXPRESSION;'
+    (PATTERN 'with' EXPRESSION ',')* # <-- because 'match pattern to expression.'
+    ('otherwise' EXPRESSION)
+
+WILDCARD_PATTERN --> '_'   
+
 
 FUNCTION_CALL --> 'call' FUNCTION_ID ('with' (EXPRESSION | ARRAYLITERAL))?
 FUNCTION_PARAMETER -->
-    'define' VARIABLE_ID 'as' 
-    ('out' | 'in')? # read write 'ref' unnecesary due to pointer use
     ('restrict')? # promise
+    ('ref')? # require as reference / pointer
+    ('out' | 'in')? # <-- readonly 
+    VARIABLE_ID 'as'
     (
-        ('nullable')? VARIABLE_TYPES ('equal to' EXPRESSION)?
-        | ('restrict')? 'pointer to' VARIABLE_TYPES ('equal to' EXPRESSION)? 
+        VARIABLE_TYPES ('equal to' EXPRESSION)?
     )
-
 
 
 
@@ -144,79 +147,19 @@ STATEMENT --> STATEMENT_BLOCK | ASSIGNMENT | VARIABLE_DEFINITION | CONDITIONAL_S
 			| RETURN_STATEMENT | USING_STATEMENT | IMPORT_STATEMENT | ASM_STATEMENT | COMPOUND_ASSIGNMENT
 # Statements are separated by a period, but the last statement does not require a period.	
 
-ASM_STATEMENT --> 'asm' ('unsafe')? (ARCHITECTURE_MODIFIER)? 
-                  ('clobbers' STRINGLITERAL)? 
-                  STRINGLITERAL. <-- containing asm code for lexer simplicity
-
-ARCHITECTURE_MODIFIER --> '16bit' | '32bit' | '64bit'
-
-COMPOUND_ASSIGNMENT --> 
-    ('add' EXPRESSION 'to' VARIABLE_IDENTIFIER) |
-    ('subtract' EXPRESSION 'from' VARIABLE_IDENTIFIER) |
-    ('multiply' VARIABLE_IDENTIFIER 'by' EXPRESSION) |
-    ('divide' VARIABLE_IDENTIFIER 'by' EXPRESSION) |
-    ('modulate' VARIABLE_IDENTIFIER 'with' EXPRESSION)
-
-RETURN_STATEMENT --> 'return' EXPRESSION?
-
 LABEL_STATEMENT --> 'label' LABEL_ID
 GOTO_STATEMENT --> 'goto' LABEL_ID
 
-ASSERTION_STATEMENT --> 'assert' CONDITION (',' STRINGLITERAL)?
-
-BREAK_STATEMENT --> 'break'
-CONTINUE_STATEMENT --> 'continue'
-
 STATEMENT_BLOCK --> 'execute the following;' (STATEMENT)* 'fin'
 
-#parser will simply check if the entire statement validates as a function call
-EXPRESSION_STMT --> FUNCTION_CALL | INCREMENT_STMT | DECREMENT_STMT
-FUNCTION_CALL_STMT --> FUNCTION_CALL # function call as a statement for when no return or throwaway is expected.
-INCREMENT_STMT --> INCREMENT_PRE | INCREMENT_POST
-DECREMENT_STMT --> DECREMENT_PRE | DECREMENT_POST
-
-ASSIGNMENT --> 'set' VARIABLE_IDENTIFIER 'equal to' EXPRESSION
-             | 'assign' VARIABLE_IDENTIFIER ', ' EXPRESSION
-
-
-USING_STATEMENT --> 'using' VARIABLE_ID 'as' EXPRESSION # cleanup when done
-IMPORT_STATEMENT --> 'import' STRINGLITERAL ('as' IDENTIFIER)? # 
-ALIAS_STATEMENT --> 'alias' ALIAS_ID 'as' EXPRESSION # alias is a reference to an existing accessable variable, not a copy. It can be used to create a new name for an existing variable.
-
-ITERATOR_LOOP --> 'iterate over' EXPRESSION
-				('with index as' VARIABLE_ID)? 
-                ('with value as' VARIABLE_ID)? 
-				 'do' STATEMENT # while in this loop provide 'index' and 'item' as keyword values. // compiler can ignore unused values in future.
-FOREACH_LOOP --> 'for each' VARIABLE_ID 'in' EXPRESSION 'do' STATEMENT
-FOR_LOOP --> 'for' VARIABLE_ID 'from' EXPRESSION 'to' EXPRESSION ('step' EXPRESSION)? 'do' STATEMENT
-
-WHILE_LOOP --> 'while' EXPRESSION 'do' STATEMENT
-DO_WHILE_LOOP --> 'do' STATEMENT 'while' EXPRESSION
+ASSIGNMENT --> 'set' IDENTIFIER 'equal to' EXPRESSION
+             | 'assign' IDENTIFIER ', ' EXPRESSION
+             | 'put'  EXPRESSION 'into' IDENTIFIER
 
 # if i mandate expression is parenthised or statement is a block the then keyword is reasonably unnecessary
 # Parser will initially parse if/elif/else as separate statements >> Validator will move elifs and else to inner if
 # ex parser find if >> look for then ? parse : check paren | block >> parse
 CONDITIONAL_STATEMENT --> 'if' EXPRESSION 'then' STATEMENT ('otherwise if' EXPRESSION 'then' STATEMENT)?+ ('otherwise' STATEMENT)?
-
-STRUCTURE_DEFINITION --> 'define structure' ('template')? STRUCTURE_ID 
-                            (STRUCTURE_INHERITANCE)? 
-                            (TEMPLATE_TYPES)? 
-                            'with:' BLOCK_STATEMENT <-- contining vars and funcs
-
-STRUCTURE_INHERITANCE --> 'inheriting' TYPE #Yes i see the keyword reuse
-TEMPLATE_TYPES --> 'for types;' TYPE_RESTRICTION (',' TYPE_RESTRICTION)*
-
-TYPE_RESTRICTION --> T 'inheriting' T ('and' T)*
-
-FUNCTION_DEFINITION --> 
-    'define function' ('template')? FUNCTION_ID 
-    ('for' STRUCTURE_ID)? 
-    (TEMPLATE_TYPES)?
-    ('returning' VARIABLE_TYPES)?
-    ('with' FUNCTION_PARAMETERS)? # possible no parameters <--- Can use containing structure generics
-    ':' STATEMENT # either single statement or a block statement
-FUNCTION_PARAMETERS --> ARRAYLITERAL << Of FUNCTION_PARAMETER
-                      | FUNCTION_PARAMETER
 
 # define name as number of type equal to value // array of // empty array
 # Variable cannot be const and nullable it does not make sense. Constant definition must set a value.
@@ -227,26 +170,62 @@ VARIABLE_DEFINITION --> 'define' VARIABLE_ID 'is a'
             ( 'constant' VARIABLE_TYPES 'equal to' EXPRESSION
             | ('static')? VARIABLE_TYPES 'equal to' EXPRESSION )
 
-ENUM_DEFINITION --> 'define enum' STRUCT_ID 'with' NONKEYWORDSYMBOL, ... # values compared against keywords and literals during parse
+BREAK_STATEMENT --> 'break'
+CONTINUE_STATEMENT --> 'continue'
+
+COMPOUND_ASSIGNMENT --> 
+    '+=' ('add' EXPRESSION 'to' VARIABLE_IDENTIFIER) |
+    '-=' ('subtract' EXPRESSION 'from' VARIABLE_IDENTIFIER) |
+    '*=' ('multiply' VARIABLE_IDENTIFIER 'by' EXPRESSION) |
+    '/=' ('divide' VARIABLE_IDENTIFIER 'by' EXPRESSION) |
+    '%=' ('modulate' VARIABLE_IDENTIFIER 'with' EXPRESSION) |
+    '&=' ('concatenate' VARIABLE_IDENTIFIER 'with' EXPRESSION)
+
+#parser will simply check if the entire statement validates as a function call
+EXPRESSION_STMT --> FUNCTION_CALL | INCREMENT_STMT | DECREMENT_STMT
+FUNCTION_CALL_STMT --> FUNCTION_CALL # function call as a statement for when no return or throwaway is expected.
+INCREMENT_STMT --> INCREMENT_PRE | INCREMENT_POST
+DECREMENT_STMT --> DECREMENT_PRE | DECREMENT_POST
+
+IMPORT_STATEMENT --> 'import' STRINGLITERAL ('as' IDENTIFIER)? # 
+
+LOOP_LOOP --> 'loop' BLOCK_STATEMENT # included because somtimes its easier to comprehend
+ITERATOR_LOOP --> 'iterate over' EXPRESSION
+				# ('with' VARIABLE_ID 'as index')? <-- compiler will manage 'index' and 'value' references.
+                # ('with' VARIABLE_ID 'as value')? 
+                'do' BLOCK_STATEMENT # while in this loop provide 'index' and 'item' as keyword values. // compiler can ignore unused values in future.
+FOREACH_LOOP --> 'for each' VARIABLE_ID 'in' EXPRESSION 'do' BLOCK_STATEMENT
+FOR_LOOP --> 'for' VARIABLE_ID 'from' EXPRESSION ('while'|'until') EXPRESSION ('step' EXPRESSION)? 'do' BLOCK_STATEMENT
+
+WHILE_LOOP --> ('while'|'until') EXPRESSION 'do' STATEMENT
+DO_WHILE_LOOP --> 'do' STATEMENT ('while'|'until') EXPRESSION
+
+ENUM_DEFINITION --> 'enumerate' IDENTIFIER 'with' IDENTIFIER (',' IDENTIFIER)* ... # values compared against keywords and literals during parse
+
+RETURN_STATEMENT --> 'return' EXPRESSION?
+
+ASSERTION_STATEMENT --> 'assert' CONDITION (',' STRINGLITERAL)?
+
+ASM_STATEMENT --> 'asm' ('unsafe')? (ARCHITECTURE_MODIFIER)? 
+                  ('clobbers' STRINGLITERAL)? 
+                  STRINGLITERAL. <-- containing asm code for lexer simplicity
+
+ARCHITECTURE_MODIFIER --> '16bit' | '32bit' | '64bit'
+
+# case statement - expression - code block containing case statements and code top dows allosw easy fallthrough comprehension validator will match and care about structure.
 
 SWITCH_STATEMENT -->
     'switch' EXPRESSION (CASE_CLAUSE)+ 'otherwise' ':' STATEMENT # Block mandatory?
-CASE_CLAUSE --> 'case' PATTERN ('when' EXPRESSION)? ':' STATEMENT # Block mandatory?
+CASE_CLAUSE --> 'case' PATTERN
 
-PATTERN --> LITERAL_PATERN
-            | ENUM_PATTERN
-            | TYPE_PATTERN
-            | WILDCARD_PATTERN
+STRUCTURE_DEFINITION --> 'structure' STRUCTURE_ID BLOCK_STATEMENT <-- contining vars and funcs
 
-LITERAL_PATTERN --> NUMBERLITERAL | STRINGLITERAL | BOOLEANLITERAL      # existing literals
-ENUM_PATTERN --> ENUM_ID ''s' ENUM_VALUE                                # ExprMemberAccess IDENTIFIER '.' IDENTIFIER
-TYPE_PATTERN --> VARIABLE_TYPES VARIABLE_ID?                            # <-- Type check && cast
-WILDCARD_PATTERN --> '_'                                                # <-- Wildcard Keyword
+# arch is architecture a kind of overload by which the caller will match function by architecture
+FUNCTION_DEFINITION --> 'inline'? 'arch'? 'function' IDENTIFIER 'for' STRUCT 'returning' TYPE 'with' PARAMETERS BLOCK
 
-MATCH_EXPRESSION -->
-    'match' EXPRESSION 'with ;'
-    (PATTERN 'to' EXPRESSION ',')* # <-- because 'match pattern to expression.'
-    ('otherwise' EXPRESSION)?
+MODE_STATE --> ARCHITECHTURE BLOCK 
+# defines a block of code that needs to be written using a specific architecture
+# typically used in main program and definition zones items not in archblock will default to target architecture.
 
 # The program is a single file with imports referencing single files only structs and functions will be imported maintaining scope
 # internal & private not visible to program file put still compiled properly

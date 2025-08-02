@@ -122,6 +122,8 @@ public static class Lexer
                 }
                 goto DEFAULT;
             case '-':
+                if (i + 1 < raw.Length && raw[i + 1] == '=')
+                    goto EQUALS;
                 HandleNumeric(raw, ref i, ref state, stringBuilder, tokens);
                 break;
             case '$': // Allow cash and hash and at as id prefixes
@@ -131,6 +133,9 @@ public static class Lexer
                 HandleIdentifier(raw, ref i, ref state, stringBuilder, tokens);
                 break;
             case '&':
+                if (i + 1 < raw.Length && raw[i + 1] == '=')
+                    goto EQUALS;
+
                 //FlushBuffer(stringBuilder, tokens, ref state);
                 if (i + 1 < raw.Length && raw[i + 1] == '&') // <<
                 {
@@ -175,6 +180,9 @@ public static class Lexer
                 }
                 goto EQUALS;
             case '!': // compound equals
+            case '+':
+            case '*':
+            case '/':
             case '=': EQUALS:
                 //FlushBuffer(stringBuilder, tokens, ref state);
                 if (i + 1 < raw.Length && raw[i + 1] == '=')

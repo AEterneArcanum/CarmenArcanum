@@ -1,13 +1,13 @@
 ﻿using Arcane.Carmen.AST.Types;
 using Arcane.Carmen.Lexer;
 using System.Reflection;
-using System.Xml.Linq;
+using System.Security.AccessControl;
 
 namespace Arcane.Carmen.Parser;
 
 public enum Keywords
 {
-    Unknown,
+    Unknown = -1,
     Program,
     Define,
     Decrement,
@@ -21,10 +21,8 @@ public enum Keywords
     Or,
     The,
     Index,
-
     And,
     Xor,
-
     Sum,
     Difference,
     Product,
@@ -34,18 +32,26 @@ public enum Keywords
     Power,
     Square,
     Root,
-
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Modulate,
+    Concatenate,
+    CompoundAdd,
+    CompoundSubtract,
+    CompoundMultiply,
+    CompoundDivide,
+    CompoundModulate,
+    CompoundConcatenate,
     Of,
     Type,
     OfType,
-
     With,
     Size,
     WithSize,
-
     If,
     Then,
-
     TheAddressOf,
     Address,
     Assign,
@@ -53,7 +59,6 @@ public enum Keywords
     Equal,
     To,
     EqualTo,
-
     Less, Than, Greater,
     IsEqualTo,
     IsNotEqualTo,
@@ -61,35 +66,25 @@ public enum Keywords
     IsLessThanOrEqualTo,
     IsGreaterThan,
     IsGreaterThanOrEqualTo,
-    
     True,
     False,
-
     IsA,
     IsNotA,
-
     Put,
     Into,
-
     Null,
-
     Constant,
     Static,
-
     Nullable,
     Pointer,
     PointerTo,
-
     Semicolon,
     Comma,
     EOS,
-
     BlockStart,
     BlockEnd,
-
     OpenParen,
     CloseParen,
-
     TheSumOf,
     TheDifferenceOf,
     TheProductOf,
@@ -97,50 +92,91 @@ public enum Keywords
     TheModuloOf,
     RaisedToThePowerOf,
     RootOf,
-
     Bitwise,
     BitwiseOr,
     BitwiseAnd,
     BitwiseXor,
     BitwiseNot,
-
     Divided,
-
     Adder, // + 'plus'
     Subtractor, // - 'minus'
     Multiplier, // * 'times'
     Divider, // / 'divided by'
-
     Shifted,
     Rotated,
     Left, 
     Right,
-
     ShiftedLeftBy,
     ShiftedRightBy,
     RotatedLeftBy,
     RotatedRightBy,
-
     Squared,
     Cubed,
     Cubic,
-
     Otherwise,
     IfNotNullOtherwise,
-
     Concatenated,
     ConcatenatedWith,
-
     Apostrophe,
     S,
     ApostrophyS,
-
     Elements,
     From,
     Until,
     Every,
     Element,
     ElementOf,
+    Cast,
+    As,
+    AsA,
+    Safe,
+    Unsafe,
+    Arch16,
+    Arch32,
+    Arch64,
+    Match,
+    Break,
+    Continue,
+    Import,
+
+    Loop,
+    Iterate,
+    Over,
+    Value,
+    Do,
+    While,
+    For,
+    Each,
+    In,
+    Step,
+
+    ForEach,
+    IterateOver,
+    AsIndex,
+    AsValue,
+
+    Wildcard,
+    Enumerate,
+    Return,
+
+    Assert,
+
+    Asm,
+    Clobbers,
+
+    Case,
+    Switch,
+
+    Structure,
+
+    Function,
+    Call,
+    Out, 
+    Ref,
+
+    Restrict,
+    Inline,
+    Returning,
 }
 
 public static class KeywordsEx
@@ -149,6 +185,9 @@ public static class KeywordsEx
     {
         word = keyword.Content switch
         {
+            "struct" or "structure" or
+            "𐑕𐑑𐑮𐑳𐑒𐑑" or "𐑕𐑑𐑮𐑳𐑒𐑑𐑳𐑮" => Keywords.Structure,
+             
             "program" or "𐑐𐑮𐑴𐑜𐑮𐑨𐑥" => Keywords.Program,
             "define" or "𐑛𐑳𐑓𐑲𐑯" => Keywords.Define,
 
@@ -193,7 +232,7 @@ public static class KeywordsEx
             "to" or "𐑑𐑵" => Keywords.To,
 
             "sb" or "𐑕𐑚" or ":" or "{" => Keywords.BlockStart,
-            "eb" or "𐑧𐑚" or "𐑓𐑦𐑯" or "}" or "…" => Keywords.BlockEnd,
+            "eb" or "𐑧𐑚" or "…" or "}" => Keywords.BlockEnd,
 
             "op" or "𐑴𐑐" or "(" => Keywords.OpenParen,
             "ep" or "𐑧𐑐" or ")" => Keywords.CloseParen,
@@ -246,19 +285,19 @@ public static class KeywordsEx
 
             "bitwise" or "𐑚𐑦𐑑𐑢𐑲𐑟" => Keywords.Bitwise,
 
-            "shifted" => Keywords.Shifted,
-            "rotated" => Keywords.Rotated,
-            "left" => Keywords.Left,
-            "right" => Keywords.Right,
+            "shifted" or "𐑖𐑦𐑓𐑑𐑛" => Keywords.Shifted,
+            "rotated" or "𐑮𐑴𐑑𐑱𐑑𐑛" => Keywords.Rotated,
+            "left" or "𐑤𐑧𐑓𐑑" => Keywords.Left,
+            "right" or "𐑮𐑲𐑑" => Keywords.Right,
 
-            "<<" => Keywords.ShiftedLeftBy,
-            ">>" => Keywords.ShiftedRightBy,
+            "<<" or "‹‹" => Keywords.ShiftedLeftBy,
+            ">>" or "››" => Keywords.ShiftedRightBy,
 
-            "ROL" => Keywords.RotatedLeftBy,
-            "ROR" => Keywords.RotatedRightBy,
+            "ROL" or "𐑮𐑴𐑤" => Keywords.RotatedLeftBy,
+            "ROR" or "𐑮𐑴𐑮" => Keywords.RotatedRightBy,
 
             "otherwise" or "𐑳𐑞𐑮𐑢𐑲𐑟" => Keywords.Otherwise,
-            "??" => Keywords.IfNotNullOtherwise,
+            "??" or "‽" => Keywords.IfNotNullOtherwise,
 
             "concatenated" or "𐑒𐑳𐑯𐑒𐑨𐑑𐑧𐑯𐑱𐑑𐑛" => Keywords.Concatenated,
 
@@ -270,6 +309,75 @@ public static class KeywordsEx
             "until" or "𐑳𐑯𐑑𐑦𐑤" => Keywords.Until,
             "every" or "𐑧𐑝𐑧𐑮𐑰" => Keywords.Every,
             "element" or "𐑧𐑤𐑳𐑥𐑧𐑯𐑑" => Keywords.Element,
+
+
+            "cast" or "𐑒𐑨𐑕𐑑" => Keywords.Cast,
+            "as" or "𐑨𐑕" => Keywords.As,
+            "safe" or "𐑕𐑱𐑓" => Keywords.Safe,
+            "unsafe" or "𐑳𐑯𐑕𐑱𐑓" => Keywords.Unsafe,
+
+            "x16" or "𐑚16" => Keywords.Arch16,
+            "x32" or "𐑚32" => Keywords.Arch32,
+            "x64" or "𐑚64" => Keywords.Arch64,
+
+            "match" or "𐑥𐑨𐑑𐑗" => Keywords.Match,
+
+            "break" or "𐑚𐑮𐑱𐑒" => Keywords.Break,
+            "continue" or "𐑒𐑳𐑯𐑑𐑦𐑯𐑿" => Keywords.Continue,
+
+            "add" or "𐑨𐑛" => Keywords.Add,
+            "subtract" or "𐑕𐑳𐑚𐑑𐑮𐑨𐑒𐑑" => Keywords.Subtract,
+            "multiply" or "𐑥𐑳𐑤𐑑𐑦𐑐𐑤𐑲" => Keywords.Multiply,
+            "divide" or "𐑛𐑦𐑝𐑲𐑛" => Keywords.Divide,
+            "modulate" or "𐑤𐑩𐑛𐑿𐑤𐑱𐑑" => Keywords.Modulate,
+            "concatentate" or "𐑒𐑪𐑯𐑒𐑨𐑑𐑧𐑯𐑱𐑑" => Keywords.Concatenate,
+
+            "+=" => Keywords.CompoundAdd,
+            "-=" => Keywords.CompoundSubtract,
+            "*=" => Keywords.CompoundMultiply,
+            "/=" => Keywords.CompoundDivide,
+            "%=" => Keywords.CompoundModulate,
+            "&=" => Keywords.CompoundConcatenate,
+
+            "import" or "𐑦𐑥𐑐𐑹𐑑" => Keywords.Import,
+
+            "loop" or "𐑤𐑵𐑐" => Keywords.Loop,
+            "iterate" or "𐑦𐑑𐑮𐑱𐑑" or
+            "iterating" or "𐑦𐑑𐑮𐑱𐑑𐑦𐑙" => Keywords.Iterate,
+            "over" or "𐑴𐑝𐑮" => Keywords.Over,
+            "value" or "𐑝𐑨𐑤𐑿" => Keywords.Value,
+            "do" or "𐑛𐑵" => Keywords.Do,
+            "while" or "𐑢𐑲𐑤" => Keywords.While,
+            "for" or "𐑓𐑹" => Keywords.For,
+            "each" or "𐑰𐑗" => Keywords.Each,
+            "in" or "𐑦𐑯" => Keywords.In,
+            "step" or "𐑕𐑑𐑧𐑐" => Keywords.Step,
+
+            "_" => Keywords.Wildcard,
+
+            "enumerate" or "𐑧𐑯𐑵𐑥𐑮𐑲𐑑" => Keywords.Enumerate,
+
+            "return" or "𐑮𐑧𐑑𐑫𐑮𐑯" => Keywords.Return,
+            "returning" or "𐑮𐑧𐑑𐑫𐑮𐑯𐑦𐑙" => Keywords.Returning,
+
+            "assert" or "𐑩𐑕𐑧𐑮𐑑" => Keywords.Assert,
+
+            "asm" or "𐑱𐑥" or "𐑱𐑕𐑥" => Keywords.Asm,
+            "clobbers" or "𐑒𐑤𐑪𐑚𐑮𐑟" => Keywords.Clobbers,
+
+            "case" or "𐑒𐑱𐑕" => Keywords.Case,
+            "switch" or "𐑕𐑢𐑦𐑑𐑗" => Keywords.Switch,
+
+            "function" or "𐑓𐑳𐑯𐑒𐑖𐑳𐑯" => Keywords.Function,
+            "call" or "𐑒𐑩𐑤" => Keywords.Function,
+            "out" or "𐑬𐑑" => Keywords.Out,
+            "ref" or "𐑮𐑧𐑓" => Keywords.Ref,
+
+            "restrict" or
+            "𐑮𐑧𐑕𐑑𐑮𐑦𐑒𐑑" => Keywords.Restrict,
+
+            "inline" or
+            "𐑦𐑯𐑤𐑲𐑯" => Keywords.Inline,
 
             _ => Keywords.Unknown
         };
@@ -296,8 +404,8 @@ public static class KeywordsEx
             "longs" or "𐑤𐑪𐑙𐑕" => Primitives.Long,
             "ulong" or "𐑢𐑤𐑪𐑙" or
             "ulongs" or "𐑢𐑤𐑪𐑙𐑕" => Primitives.ULong,
-            "single" or "float" or "𐑕𐑦𐑯𐑜𐑮" or
-            "singles" or "floats" or "𐑕𐑦𐑯𐑜𐑮𐑕" => Primitives.Float,
+            "single" or "float" or "𐑕𐑦𐑯𐑜𐑮" or "𐑓𐑤𐑴𐑑" or
+            "singles" or "floats" or "𐑕𐑦𐑯𐑜𐑮𐑕" or "𐑓𐑤𐑴𐑑𐑕" => Primitives.Float,
             "double" or "𐑛𐑳𐑚𐑤" or
             "doubles" or "𐑛𐑳𐑚𐑤𐑕" => Primitives.Double,
             "decimal" or "𐑛𐑧𐑕𐑦𐑥𐑩𐑤" or

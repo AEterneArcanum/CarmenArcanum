@@ -126,24 +126,6 @@ public partial class CarmenParser
                 }
             }
 
-            // Var Definition operator
-            if (token.IsKeyword(Keywords.Is)) {
-                if (i + 1 < processed.Count &&
-                    processed[i + 1].IsKeyword(Keywords.A))
-                {
-                    pass.Add(new("is a", token.Position, TokenType.Operators, Keywords.IsA));
-                    i++;
-                    continue;
-                }
-                if (i + 2 < processed.Count &&
-                    processed[i + 1].IsKeyword(Keywords.Not) &&
-                    processed[i + 2].IsKeyword(Keywords.A))
-                {
-                    pass.Add(new("is not a", token.Position, TokenType.Operators, Keywords.IsNotA));
-                    i += 2;
-                    continue;
-                }
-            }
 
             // AddressOd operator
             if (token.IsKeyword(Keywords.The) && i + 2 < processed.Count &&
@@ -246,6 +228,65 @@ public partial class CarmenParser
                     }
                 }
             }
+            // Var Definition operator
+            if (token.IsKeyword(Keywords.Is)) {
+                if (i + 1 < processed.Count &&
+                    processed[i + 1].IsKeyword(Keywords.A))
+                {
+                    pass.Add(new("is a", token.Position, TokenType.Operators, Keywords.IsA));
+                    i++;
+                    continue;
+                }
+                if (i + 2 < processed.Count &&
+                    processed[i + 1].IsKeyword(Keywords.Not) &&
+                    processed[i + 2].IsKeyword(Keywords.A))
+                {
+                    pass.Add(new("is not a", token.Position, TokenType.Operators, Keywords.IsNotA));
+                    i += 2;
+                    continue;
+                }
+            }
+            // Cast Type operator
+            if (token.IsKeyword(Keywords.As) && i + 1 < processed.Count &&
+                processed[i + 1].IsKeyword(Keywords.A))
+            {
+                pass.Add(new("as a", token.Position, TokenType.Operators, Keywords.AsA));
+                i++;
+                continue;
+            }
+
+
+            // Iterator compounds
+            if (token.IsKeyword(Keywords.As) && i + 1 < processed.Count)
+            {
+                if (processed[i + 1].IsKeyword(Keywords.Index))
+                {
+                    pass.Add(new("as index", token.Position, TokenType.Operators, Keywords.AsIndex));
+                    i++;
+                    continue;
+                }
+                if (processed[i + 1].IsKeyword(Keywords.Value))
+                {
+                    pass.Add(new("as value", token.Position, TokenType.Operators, Keywords.AsValue));
+                    i++;
+                    continue;
+                }
+            }
+            if (token.IsKeyword(Keywords.For) && i + 1 < processed.Count &&
+                processed[i + 1].IsKeyword(Keywords.Each))
+            {
+                pass.Add(new("for each", token.Position, TokenType.Operators, Keywords.ForEach));
+                i++;
+                continue;
+            }
+            if (token.IsKeyword(Keywords.Iterate) && i + 1 < processed.Count &&
+                processed[i + 1].IsKeyword(Keywords.Over))
+            {
+                pass.Add(new("as a", token.Position, TokenType.Operators, Keywords.IterateOver));
+                i++;
+                continue;
+            }
+
 
             // Array size operator
             if (token.Keyword == Keywords.With && i + 1 < processed.Count &&
